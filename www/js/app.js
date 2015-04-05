@@ -138,3 +138,32 @@ app.config(function($stateProvider, $urlRouterProvider) {
         })
     $urlRouterProvider.otherwise('/login');
 });
+
+app.controller('AppCtrl', function($scope, $ionicPopover, $location) {
+
+  $ionicPopover.fromTemplateUrl('templates/popover.html', {
+    scope: $scope,
+  }).then(function(popover) {
+    $scope.popover = popover;
+  });
+
+  $scope.demo = 'ios';
+  $scope.setPlatform = function(p) {
+    document.body.classList.remove('platform-ios');
+    document.body.classList.remove('platform-android');
+    document.body.classList.add('platform-' + p);
+    $scope.demo = p;
+  }
+
+  $scope.singleCardView = function(view){
+    url_string = 'card/' + view._id.toString()
+    console.log(url_string)
+    $location.path(url_string); // path not hash
+  }
+
+  $scope.homeView = function(view){
+    $location.path('home'); // path not hash
+  }
+
+
+})

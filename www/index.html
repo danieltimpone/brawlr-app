@@ -8,13 +8,13 @@
     <link href="../lib/ionic/css/ionic.css" rel="stylesheet">
     <link href="../lib/ionic-contrib-tinder-cards/ionic.tdcards.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-
+<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
     <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
     <link href="css/ionic.app.css" rel="stylesheet">
     -->
 
     <!-- ionic/angularjs js -->
-    <script src="../lib/ionic/js/ionic.bundle.js"></script>
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
 
     <!-- Firebase -->
     <script src="https://cdn.firebase.com/js/client/2.0.6/firebase.js"></script>
@@ -28,11 +28,12 @@
     <!-- your app's js -->
     <script src="js/app.js"></script>
 
-    <script src="../lib/collide/collide.js"></script>
-    <script src="../lib/ionic-contrib-tinder-cards/ionic.tdcards.js"></script>
+    <script src="lib/collide/collide.js"></script>
+    <script src="lib/ionic-contrib-tinder-cards/ionic.tdcards.js"></script>
 
   </head>
-  <body ng-app="starter">
+
+  <body class="platform-ios" ng-app="starter" no-scroll   ng-controller="AppCtrl">
   <div class="bar bar-header" style="margin-bottom: 1cm;">
     <button class="button icon ion-navicon"  ng-click="popover.show($event)"> </button>
     <h1 class="title" ng-click="homeView()">Brawler</h1>
