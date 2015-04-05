@@ -65,6 +65,7 @@ app.factory('Auth', function($firebaseAuth, $firebase, Root, $timeout){
   };
 });
 
+
 app.controller("LoginCtrl", function($scope, Auth) {
   // Initially set no user to be logged in
   $scope.user = null;
@@ -110,15 +111,35 @@ app.controller("LoginCtrl", function($scope, Auth) {
   });
 });
 
-app.controller('CardsCtrl', function($scope, TDCardDelegate) {
+app.service('Card', function ($firebase, FBURL) {
+  var ref = new Firebase(FBURL);
+  var cards = $firebase(ref.child('Users')).$asArray();
+  console.log(cards)
+  
+  this.all = cards;
+  this.create = function (user) {
+      return users.$add(user);
+  },
+  this.get = function(userId) {
+      return $firebase(ref.child('Users').child(userId)).$asObject();
+  },
+  this.delete = function (user) {
+      return users.$remove(user);
+  }
+});
+
+app.controller('CardsCtrl', function($scope, TDCardDelegate, Card) {
   console.log("App running");
+    $scope.cards = Card.all;
+    console.log($scope.cards);
+
     var cardTypes = [
         { image: 'img/pic1.jpg', title: 'Ali', _id: 0, description: "Float like a butterfly; sting like a bee"},
         { image: 'img/pic2.jpg', title: 'Kimbo', _id: 1, description: 'I have no professional training'},
         { image: 'img/pic3.jpg', title: 'Bruce', _id: 2, description: "Goodmornings are bad for you"},
     ];
 
-    $scope.cards = [];
+    //$scope.cards = [];
     $scope.detailed_view = false;
     $scope.addCard = function(i) {
         var newCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
@@ -140,7 +161,7 @@ app.controller('CardsCtrl', function($scope, TDCardDelegate) {
         $scope.cards.splice(index, 1);
         console.log('Card removed');
     }
-})
+});
 
 app.controller('ProfileCtrl', function ($scope) {
     $scope.title = 'Profile Page';
