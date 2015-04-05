@@ -3,7 +3,7 @@
 // angular.module is a global place for creating, registering and retrieving Angular modules
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
-var app = angular.module("starter", ["ionic", "firebase"]);
+var app = angular.module("starter", ["ionic", 'ionic.contrib.ui.tinderCards', "firebase"]);
 
 // do all the things ionic needs to get going
 app.run(function($ionicPlatform) {
@@ -91,4 +91,50 @@ app.controller("LoginCtrl", function($scope, Auth) {
     
 
   });
+});
+
+app.controller('CardsCtrl', function($scope, TDCardDelegate) {
+    var cardTypes = [
+        { image: 'img/pic1.jpg', title: 'Ali', _id: 0, description: "Float like a butterfly; sting like a bee"},
+        { image: 'img/pic2.jpg', title: 'Kimbo', _id: 1, description: 'I have no professional training'},
+        { image: 'img/pic3.jpg', title: 'Bruce', _id: 2, description: "Goodmornings are bad for you"},
+    ];
+
+    $scope.cards = [];
+    $scope.detailed_view = false;
+    $scope.addCard = function(i) {
+        var newCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+        newCard.id = Math.random();
+        $scope.cards.push(angular.extend({}, newCard));
+    }
+
+    for(var i = 0; i < 3; i++) $scope.addCard();
+
+    $scope.cardSwipedLeft = function(index) {
+        console.log('Left swipe');
+    }
+
+    $scope.cardSwipedRight = function(index) {
+        console.log('Right swipe');
+    }
+
+    $scope.cardDestroyed = function(index) {
+        $scope.cards.splice(index, 1);
+        console.log('Card removed');
+    }
+})
+
+app.config(function($stateProvider, $urlRouterProvider) {
+    $stateProvider
+        .state('login', {
+            url: '/login',
+            templateUrl: 'templates/login.html',
+            controller: 'LoginCtrl'
+        })
+        .state('cards', {
+            url: '/cards',
+            templateUrl: 'templates/cards.html',
+            controller: 'CardsCtrl'
+        })
+    $urlRouterProvider.otherwise('/login');
 });

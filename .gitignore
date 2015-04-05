@@ -2,3 +2,6 @@ node_modules/
 plugins/
 platforms/
 hooks/
+bower_components/
+www/lib/
+resources/
