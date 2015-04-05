@@ -1,5 +1,5 @@
-<ion-view  ng-controller="CardsCtrl" title="Cards">
-  <ion-pane>
+<ion-view ng-controller="CardsCtrl" title="Cards">
+  <ion-content>
     <td-cards >
         <td-card id="td-card" ng-repeat="card in cards" on-destroy="cardDestroyed($index)" on-swipe-left="cardSwipedLeft($index)" on-swipe-right="cardSwipedRight($index)" on-partial-swipe="cardPartialSwipe(amt)" ng-click="singleCardView(card)">
             <div class="title">
@@ -8,9 +8,9 @@
                 <div class="image">
                 <div class="no-text overlayBox"><div class="noBox boxed">No</div></div>
                 <img ng-src="{{card.image}}"></img>
-                <div class="yes-text overlayBox"><div class="yesBox boxed" id="centerMe">Yes</div></div>
+                <div class="yes-text overlayBox"><div class="yesBox boxed" id="centerMe">Ye<s/div></div>
             </div>
         </td-card>
     </td-cards>
-  </ion-pane>
+    </ion-content>
 </ion-view>

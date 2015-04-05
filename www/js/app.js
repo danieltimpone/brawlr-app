@@ -56,6 +56,9 @@ app.factory('Auth', function($firebaseAuth, $firebase, Root, $timeout){
 app.controller("LoginCtrl", function($scope, Auth) {
   // Initially set no user to be logged in
   $scope.user = null;
+  $scope.picture = 'img/pic1.jpg'
+  $scope.userName = 'Not Logged In'
+
 
   // Logs a user in with Facebook
   // Calls $authWithOAuthPopup on $firebaseAuth
@@ -79,21 +82,24 @@ app.controller("LoginCtrl", function($scope, Auth) {
   Auth.onAuth(function(authData, $firebase) {
     var ref = new Firebase('https://brawlr.firebaseio.com');
     var users = $firebase(ref);
+    $scope.picture = 'img/pic1.jpg'
+    $scope.userName = 'Not Logged In'
 
     $scope.user = authData;
-    $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&&height=300';
-    $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
+    if ($scope.user) {
+      $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&&height=300';
+      $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
+      users.$update($scope.userName, {
+        picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&&height=300',
+      });
+    }
 
-    users.$update($scope.userName, {
-      picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&&height=300',
-    });
-
-    
 
   });
 });
 
 app.controller('CardsCtrl', function($scope, TDCardDelegate) {
+  console.log("App running");
     var cardTypes = [
         { image: 'img/pic1.jpg', title: 'Ali', _id: 0, description: "Float like a butterfly; sting like a bee"},
         { image: 'img/pic2.jpg', title: 'Kimbo', _id: 1, description: 'I have no professional training'},
@@ -124,30 +130,45 @@ app.controller('CardsCtrl', function($scope, TDCardDelegate) {
     }
 })
 
+app.controller('ProfileCtrl', function ($scope) {
+    $scope.title = 'Profile Page';
+    $scope.body = 'PROFILE';
+});
+
 app.config(function($stateProvider, $urlRouterProvider) {
-    $stateProvider
-        .state('login', {
-            url: '/login',
-            templateUrl: 'templates/login.html',
-            controller: 'LoginCtrl'
-        })
-        .state('cards', {
-            url: '/cards',
-            templateUrl: 'templates/cards.html',
-            controller: 'CardsCtrl'
-        })
+    $stateProvider.state('login', {
+      url: '/login',
+      views: {
+        login: {
+          templateUrl: 'templates/login.html'
+        }
+      }
+    })
+
+    $stateProvider.state('cards', {
+      url: '/cards',
+      views: {
+        cards: {
+          templateUrl: 'templates/cards.html'
+        }
+      }
+    })
+
+    $stateProvider.state('profile', {
+      url: '/profile',
+      views: {
+        profile: {
+          templateUrl: 'templates/profile.html'
+        }
+      }
+    })
+
     $urlRouterProvider.otherwise('/login');
 });
 
 app.controller('AppCtrl', function($scope, $ionicPopover, $location) {
-
-  $ionicPopover.fromTemplateUrl('templates/popover.html', {
-    scope: $scope,
-  }).then(function(popover) {
-    $scope.popover = popover;
-  });
-
-  $scope.demo = 'ios';
+  console.log("App running");
+  $scope.demo = 'android';
   $scope.setPlatform = function(p) {
     document.body.classList.remove('platform-ios');
     document.body.classList.remove('platform-android');
@@ -155,15 +176,31 @@ app.controller('AppCtrl', function($scope, $ionicPopover, $location) {
     $scope.demo = p;
   }
 
-  $scope.singleCardView = function(view){
-    url_string = 'card/' + view._id.toString()
-    console.log(url_string)
-    $location.path(url_string); // path not hash
-  }
+  // .fromTemplate() method
+  var template = '<ion-popover-view><ion-header-bar> <h1 class="title">My Popover Title</h1> </ion-header-bar> <ion-content> Hello! </ion-content></ion-popover-view>';
 
-  $scope.homeView = function(view){
-    $location.path('home'); // path not hash
-  }
+  $scope.popover = $ionicPopover.fromTemplate(template, {
+    scope: $scope
+  });
 
-
-})
+  $scope.openPopover = function($event) {
+    console.log("POPOVER OPENING");
+    $scope.popover.show($event);
+  };
+  $scope.closePopover = function() {
+    console.log("POPOVER CLOSING");
+    $scope.popover.hide();
+  };
+  //Cleanup the popover when we're done with it!
+  $scope.$on('$destroy', function() {
+    $scope.popover.remove();
+  });
+  // Execute action on hide popover
+  $scope.$on('popover.hidden', function() {
+    // Execute action
+  });
+  // Execute action on remove popover
+  $scope.$on('popover.removed', function() {
+    // Execute action
+  });
+});

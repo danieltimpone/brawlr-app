@@ -5,10 +5,10 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
     <title></title>
 
-    <link href="../lib/ionic/css/ionic.css" rel="stylesheet">
-    <link href="../lib/ionic-contrib-tinder-cards/ionic.tdcards.css" rel="stylesheet">
+    <link href="lib/ionic/css/ionic.css" rel="stylesheet">
+    <link href="lib/ionic-contrib-tinder-cards/ionic.tdcards.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
     <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
     <link href="css/ionic.app.css" rel="stylesheet">
     -->
@@ -33,39 +33,30 @@
 
   </head>
 
-  <body class="platform-ios" ng-app="starter" no-scroll   ng-controller="AppCtrl">
-  <div class="bar bar-header" style="margin-bottom: 1cm;">
-    <button class="button icon ion-navicon"  ng-click="popover.show($event)"> </button>
-    <h1 class="title" ng-click="homeView()">Brawler</h1>
-    <a class="button button-icon" ui-sref="cards"><img src="img/gloveIcon2.png"  height="32" width="32"></img></a>
-  </div>
+  <body ng-app="starter" ng-controller="AppCtrl">
 
-    <script id="templates/popover.html" type="text/ng-template">
-      <ion-popover-view>
-        <ion-content>
-          <div class="list">
-            <a class="item" href="#profile">
-              Profile
-            </a>
-            <a class="item" href="#settings">
-              Settings
-            </a>
-            <a class="item" href="#faqlegal" target="_blank">
-              FAQ / Legal
-            </a>
-            <a class="item" href="#about">
-              About
-            </a>
-            <a class="item" href="#logout">
-              Logout
-            </a>
-          </div>
-        </ion-content>
-      </ion-popover-view>
-    </script>       
+    <div class="bar bar-header">
+      <h1 class="title">Popover</h1>
+      <div class="buttons">
+        <button class="button button-icon ion-more" ng-click="popover.show($event)">
+        </button>
+      </div>
+    </div>
 
-  <ion-nav-view></ion-nav-view>
-
+    <ion-tabs class="tabs-dark">
+      <ion-tab icon="ion-home" ui-sref="login">
+        <ion-nav-view name="login"></ion-nav-view>
+      </ion-tab>
+      <ion-tab icon="ion-android-sad" ui-sref="cards">
+        <ion-nav-view name="cards"></ion-nav-view>
+      </ion-tab>
+      <ion-tab icon="ion-person" ui-sref="profile">
+        <ion-nav-view name="profile"></ion-nav-view>
+      </ion-tab>
+      <ion-tab icon="ion-settings" ui-sref="settings">
+        <ion-nav-view name="settings"></ion-nav-view>
+      </ion-tab>
+    </ion-tabs>
 
 
   </body>
