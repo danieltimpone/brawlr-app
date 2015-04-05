@@ -1,6 +1,6 @@
-<ion-view ng-controller="CardsCtrl" title="Cards">
+<ion-view title="Cards">
   <ion-content class="padding has-header">
-    <td-cards >
+    <td-cards>
         <td-card id="td-card" ng-repeat="card in cards" on-destroy="cardDestroyed($index)" on-swipe-left="cardSwipedLeft($index)" on-swipe-right="cardSwipedRight($index)" on-partial-swipe="cardPartialSwipe(amt)" ng-click="singleCardView(card)">
             <div class="title">
                 {{card.title}}

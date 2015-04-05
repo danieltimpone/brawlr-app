@@ -6,7 +6,7 @@
 var app = angular.module("starter", ["ionic", 'ionic.contrib.ui.tinderCards', "firebase"]);
 
 // do all the things ionic needs to get going
-app.run(function($ionicPlatform) {
+app.run(function($ionicPlatform, $rootScope) {
     $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -17,6 +17,17 @@ app.run(function($ionicPlatform) {
       StatusBar.styleDefault();
     }
   });
+
+  // On sate
+  $rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
+  if (toState.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
+    // User isn’t authenticated
+    console.log("User tried to access " + toState + ", but they're not logged in!")
+    $state.transitionTo("login");
+    event.preventDefault(); 
+  }
+});
+
 });
 
 // change this URL to your Firebase
@@ -39,6 +50,7 @@ app.factory('Auth', function($firebaseAuth, $firebase, Root, $timeout){
     },
     // wrapping the unauth function
     logout: function logout() {
+      console.log('Logging out');
       auth.$unauth();
     },
     // wrap the $onAuth function with $timeout so it processes
@@ -139,8 +151,10 @@ app.config(function($stateProvider, $urlRouterProvider) {
     $stateProvider.state('login', {
       url: '/login',
       views: {
-        login: {
-          templateUrl: 'templates/login.html'
+        'login': {
+          templateUrl: 'templates/login.html',
+          controller: 'LoginCtrl',
+          authRequired: true
         }
       }
     })
@@ -148,17 +162,21 @@ app.config(function($stateProvider, $urlRouterProvider) {
     $stateProvider.state('cards', {
       url: '/cards',
       views: {
-        cards: {
-          templateUrl: 'templates/cards.html'
+        'cards': {
+          templateUrl: 'templates/cards.html',
+          controller: 'CardsCtrl',
+          authRequired: true
         }
       }
     })
 
     $stateProvider.state('profile', {
       url: '/profile',
-      views: {
+      'views': {
         profile: {
-          templateUrl: 'templates/profile.html'
+          templateUrl: 'templates/profile.html',
+          controller: 'ProfileCtrl',
+          authRequired: true
         }
       }
     })
@@ -168,19 +186,13 @@ app.config(function($stateProvider, $urlRouterProvider) {
 
 app.controller('AppCtrl', function($scope, $ionicPopover, $location) {
   console.log("App running");
-  $scope.demo = 'android';
-  $scope.setPlatform = function(p) {
-    document.body.classList.remove('platform-ios');
-    document.body.classList.remove('platform-android');
-    document.body.classList.add('platform-' + p);
-    $scope.demo = p;
-  }
 
-  // .fromTemplate() method
-  var template = '<ion-popover-view><ion-header-bar> <h1 class="title">My Popover Title</h1> </ion-header-bar> <ion-content> Hello! </ion-content></ion-popover-view>';
 
-  $scope.popover = $ionicPopover.fromTemplate(template, {
-    scope: $scope
+  $ionicPopover.fromTemplateUrl('templates/popover.html', {
+    scope: $scope,
+  }).then(function(popover) {
+    console.log("Setting popover");
+    $scope.popover = popover;
   });
 
   $scope.openPopover = function($event) {

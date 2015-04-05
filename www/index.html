@@ -33,14 +33,17 @@
 
   </head>
 
-  <body ng-app="starter" ng-controller="AppCtrl">
+  <body ng-app="starter" ng-controller="AppCtrl" class="platform-ionic">
 
     <div class="bar bar-header">
-      <h1 class="title">Popover</h1>
-      <div class="buttons">
-        <button class="button button-icon ion-more" ng-click="popover.show($event)">
+        <button class="button button-icon" ui-sref="cards">
+          <img src="img/gloveIcon2.png"  height="32" width="32">
         </button>
-      </div>
+
+      <h1 class="title">Brawlr</h1>
+
+        <button class="button button-icon ion-more" ng-click="popover.show($event)"/>
+
     </div>
 
     <ion-tabs class="tabs-dark">
