@@ -133,21 +133,20 @@ app.controller('CardsCtrl', function($scope, TDCardDelegate, Card) {
     $scope.cards = Card.all;
     console.log($scope.cards);
 
-    var cardTypes = [
-        { image: 'img/pic1.jpg', title: 'Ali', _id: 0, description: "Float like a butterfly; sting like a bee"},
-        { image: 'img/pic2.jpg', title: 'Kimbo', _id: 1, description: 'I have no professional training'},
-        { image: 'img/pic3.jpg', title: 'Bruce', _id: 2, description: "Goodmornings are bad for you"},
-    ];
+    // var cardTypes = [
+    //     { image: 'img/pic1.jpg', title: 'Ali', _id: 0, description: "Float like a butterfly; sting like a bee"},
+    //     { image: 'img/pic2.jpg', title: 'Kimbo', _id: 1, description: 'I have no professional training'},
+    //     { image: 'img/pic3.jpg', title: 'Bruce', _id: 2, description: "Goodmornings are bad for you"},
+    // ];
 
     //$scope.cards = [];
     $scope.detailed_view = false;
     $scope.addCard = function(i) {
-        var newCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
-        newCard.id = Math.random();
+        var newCard = $scope.cards[Math.floor(Math.random() * $scope.cards.length)];
+        //newCard.id = Math.random();
         $scope.cards.push(angular.extend({}, newCard));
     }
 
-    for(var i = 0; i < 3; i++) $scope.addCard();
 
     $scope.cardSwipedLeft = function(index) {
         console.log('Left swipe');
