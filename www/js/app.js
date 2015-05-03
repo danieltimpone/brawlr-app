@@ -93,28 +93,38 @@ app.controller("LoginCtrl", function($scope, Auth) {
   // detect changes in authentication state
   // when a user logs in, set them to $scope
   Auth.onAuth(function(authData, $firebase) {
-    var ref = new Firebase('https://brawlr.firebaseio.com');
+    var ref = new Firebase('https://brawlr.firebaseio.com/Users');
     var users = $firebase(ref);
     $scope.picture = 'img/pic1.jpg'
     $scope.userName = 'Not Logged In'
 
     $scope.user = authData;
     if ($scope.user) {
-      $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&&height=300';
+      console.log("Got a user:");
+      $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
       $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
       users.$update($scope.userName, {
-        picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&&height=300',
+        uid: $scope.user.uid,
+        fbid: $scope.user.facebook.id,
+        picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
+        accessToken: $scope.user.facebook.accessToken,
       });
+
+      $scope.current_user = {
+        uid: $scope.user.uid,
+        fbid: $scope.user.facebook.id,
+        picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
+        accessToken: $scope.user.facebook.accessToken,
+      }
     }
-
-
   });
+
 });
+
 
 app.service('Card', function ($firebase, FBURL) {
   var ref = new Firebase(FBURL);
   var cards = $firebase(ref.child('Users')).$asArray();
-  console.log(cards)
   
   this.all = cards;
   this.create = function (user) {
@@ -128,27 +138,18 @@ app.service('Card', function ($firebase, FBURL) {
   }
 });
 
-app.controller('CardsCtrl', function($scope, TDCardDelegate, Card) {
-  console.log("App running");
+app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL) {
     $scope.cards = Card.all;
-    console.log($scope.cards);
-
-    // var cardTypes = [
-    //     { image: 'img/pic1.jpg', title: 'Ali', _id: 0, description: "Float like a butterfly; sting like a bee"},
-    //     { image: 'img/pic2.jpg', title: 'Kimbo', _id: 1, description: 'I have no professional training'},
-    //     { image: 'img/pic3.jpg', title: 'Bruce', _id: 2, description: "Goodmornings are bad for you"},
-    // ];
-
-    //$scope.cards = [];
-    $scope.detailed_view = false;
-    $scope.addCard = function(i) {
-        var newCard = $scope.cards[Math.floor(Math.random() * $scope.cards.length)];
-        //newCard.id = Math.random();
-        $scope.cards.push(angular.extend({}, newCard));
-    }
-
+    
+    var ref = new Firebase(FBURL);
+    var swipes = $firebase(ref.child('Swipes')).$asArray();
+    // $scope.current_user = Auth.$getAuth();
+    // console.log($scope.current_user);
+    $scope.authObj = $firebaseAuth(ref);
+    console.log($scope.authObj.$getAuth());
 
     $scope.cardSwipedLeft = function(index) {
+
         console.log('Left swipe');
     }
 
@@ -162,9 +163,11 @@ app.controller('CardsCtrl', function($scope, TDCardDelegate, Card) {
     }
 });
 
-app.controller('ProfileCtrl', function ($scope) {
-    $scope.title = 'Profile Page';
+app.controller('ProfileCtrl', function ($scope, $firebase) {
+    $scope.title = $scope.userName + "'s Profile";
     $scope.body = 'PROFILE';
+
+    var ref = new Firebase('https://brawlr.firebaseio.com/Users');
 });
 
 app.config(function($stateProvider, $urlRouterProvider) {
@@ -205,13 +208,11 @@ app.config(function($stateProvider, $urlRouterProvider) {
 });
 
 app.controller('AppCtrl', function($scope, $ionicPopover, $location) {
-  console.log("App running");
 
 
   $ionicPopover.fromTemplateUrl('templates/popover.html', {
     scope: $scope,
   }).then(function(popover) {
-    console.log("Setting popover");
     $scope.popover = popover;
   });
 
