@@ -20,12 +20,12 @@ app.run(function($ionicPlatform, $rootScope) {
 
   // On sate
   $rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
-  if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
-    // User isn’t authenticated
-    console.log("User tried to access " + toState + ", but they're not logged in!")
-    // $state.transitionTo("login");
-    event.preventDefault(); 
-  }
+  // if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
+  //   // User isn’t authenticated
+  //   console.log("User tried to access " + toState + ", but they're not logged in!")
+  //   // $state.transitionTo("login");
+  //   event.preventDefault(); 
+  // }
 });
 
 });
@@ -142,27 +142,34 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     $scope.cards = Card.all;
     
     var ref = new Firebase(FBURL + '/Swipes');
-    var swipes = $firebase(ref);
 
     $scope.authObj = $firebaseAuth(ref);
     $scope.current_user = $scope.authObj.$getAuth();
     $scope.userName = $scope.current_user.facebook.cachedUserProfile.first_name;
 
-    console.log($scope.authObj.$getAuth());
+    var newRef = new Firebase(FBURL +'/Swipes/' + $scope.userName)
+    var swipes = $firebase(newRef);
 
     $scope.cardSwipedLeft = function(index) {
       
-      var swipedUser = $scope.cards[index].$id;
+      $scope.swipedUser = $scope.cards[index].$id;
+      console.log($scope.swipedUser);
 
-      console.log(swipedUser);
-
-      swipes.$update($scope.userName, {
-         swipedUser : "False", 
+      swipes.$update($scope.swipedUser, {
+        swipedRight : "False"
       });
+
       console.log('Left swipe');
     }
 
     $scope.cardSwipedRight = function(index) {
+        $scope.swipedUser = $scope.cards[index].$id;
+          console.log($scope.swipedUser);
+
+          swipes.$update($scope.swipedUser, {
+            swipedRight : "True"
+          });
+
         console.log('Right swipe');
     }
 
