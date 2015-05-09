@@ -195,26 +195,29 @@ app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
   }
 });
 
-app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, CurrentUser, $firebaseObject) {
+app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, CurrentUser, $firebaseObject, $firebaseArray) {
     $scope.cards = Card.all;
-    
+
     var ref = new Firebase(FBURL + '/Swipes');
-
     $scope.authObj = $firebaseAuth(ref);
-    $scope.current_user = $scope.authObj.$getAuth();
-    $scope.userName = $scope.current_user.facebook.cachedUserProfile.first_name;
 
-    var newRef = new Firebase(FBURL +'/Swipes/' + CurrentUser.getFacebookID())
+    var my_authData = firebase_connect.getAuth();
+    $scope.user = my_authData
+    if ($scope.user) {
+      $scope.current_user = $scope.user.facebook.id;
+    }
+
+    var newRef = new Firebase(FBURL +'/Swipes/' + $scope.current_user);
     var swipes = $firebaseObject(newRef);
 
+    
     $scope.cardSwipedLeft = function(index) {
       
       $scope.swipedUser = $scope.cards[index].$id;
-      console.log($scope.swipedUser);
 
-      swipes.$update($scope.swipedUser, {
-        swipedRight : "False"
-      });
+      
+      newRef.child($scope.swipedUser).set({'swipedRight' : 
+        'False'});
 
       console.log('Left swipe');
     }
@@ -223,9 +226,9 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
         $scope.swipedUser = $scope.cards[index].$id;
           console.log($scope.swipedUser);
 
-          swipes.$update($scope.swipedUser, {
-            swipedRight : "True"
-          });
+          newRef.child($scope.swipedUser).set({'swipedRight' : 
+        'True'});
+
 
         console.log('Right swipe');
     }
