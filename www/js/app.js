@@ -20,13 +20,13 @@ app.run(function($ionicPlatform, $rootScope) {
 
   // On sate
   $rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
-  if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
+  // if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
     // User isn’t authenticated
-    console.log("User tried to access " + toState + ", but they're not logged in!")
+    // console.log("User tried to access " + toState + ", but they're not logged in!")
     // $state.transitionTo("login");
-    event.preventDefault(); 
-  }
-});
+    // event.preventDefault(); 
+  // }
+  });
 
 });
 
@@ -65,8 +65,29 @@ app.factory('Auth', function($firebaseAuth, $firebase, Root, $timeout){
   };
 });
 
+app.service('currentUser', function () {
+    var current_user = 'empty';
+    var facebook_id = 'empty';
 
-app.controller("LoginCtrl", function($scope, Auth) {
+    return {
+        getUserName: function () {
+            return current_user;
+        },
+        setUserName: function(value) {
+            current_user = value;
+        },
+        getFacebookID: function () {
+            return facebook_id;
+        },
+        setFacebookID: function(value) {
+            facebook_id = value;
+        }
+
+    };
+});
+
+
+app.controller("LoginCtrl", function($scope, Auth, currentUser) {
   // Initially set no user to be logged in
   $scope.user = null;
   $scope.picture = 'img/pic1.jpg'
@@ -81,6 +102,8 @@ app.controller("LoginCtrl", function($scope, Auth) {
     Auth.loginWithFacebook()
     .then(function(authData){
       console.log('We are logged in!', authData);
+      currentUser.setUserName($scope.userName)
+      currentUser.setFacebookID($scope.user.facebook.id)
     })
     .catch(function(error) {
       console.error(error);
@@ -174,11 +197,20 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     }
 });
 
-app.controller('ProfileCtrl', function ($scope, $firebase) {
+app.controller('ProfileCtrl', function ($scope, $firebase, currentUser) {
+    $scope.userName = currentUser.getUserName()
+    $scope.facebook_id = currentUser.getFacebookID()
+
     $scope.title = $scope.userName + "'s Profile";
-    $scope.body = 'PROFILE';
+    $scope.formData = {};
 
     var ref = new Firebase('https://brawlr.firebaseio.com/Users');
+    profiles = $firebase(ref);
+
+    $scope.save_profile = function(index) {
+
+      console.log();
+    };
 });
 
 app.config(function($stateProvider, $urlRouterProvider) {
