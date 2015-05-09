@@ -161,7 +161,7 @@ app.service('Card', function ($firebase, FBURL) {
   }
 });
 
-app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL) {
+app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, currentUser) {
     $scope.cards = Card.all;
     
     var ref = new Firebase(FBURL + '/Swipes');
@@ -170,7 +170,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     $scope.current_user = $scope.authObj.$getAuth();
     $scope.userName = $scope.current_user.facebook.cachedUserProfile.first_name;
 
-    var newRef = new Firebase(FBURL +'/Swipes/' + $scope.user.facebook.id)
+    var newRef = new Firebase(FBURL +'/Swipes/' + currentUser.getFacebookID())
     var swipes = $firebase(newRef);
 
     $scope.cardSwipedLeft = function(index) {
