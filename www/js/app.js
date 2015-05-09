@@ -3,8 +3,8 @@
 // angular.module is a global place for creating, registering and retrieving Angular modules
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
-var app = angular.module("starter", ["ionic", 'ionic.contrib.ui.tinderCards', "firebase"]);
-
+var app = angular.module("starter", ["ionic", 'ionic.contrib.ui.tinderCards', "firebase", 'ngCordovaOauth']);
+var fb = new Firebase("https://brawlr.firebaseio.com");
 // do all the things ionic needs to get going
 app.run(function($ionicPlatform, $rootScope) {
     $ionicPlatform.ready(function() {
@@ -37,7 +37,8 @@ app.constant('FBURL', 'https://brawlr.firebaseio.com');
 app.service('Root', ['FBURL', Firebase]);
 
 // create a custom Auth factory to handle $firebaseAuth
-app.factory('Auth', function($firebaseAuth, $firebase, Root, $timeout){
+app.factory('Auth', function($firebaseAuth, $firebaseObject, Root, $timeout){
+
   var auth = $firebaseAuth(Root);
   return {
     // helper method to login with multiple providers
@@ -58,14 +59,14 @@ app.factory('Auth', function($firebaseAuth, $firebase, Root, $timeout){
     onAuth: function onLoggedIn(callback) {
       auth.$onAuth(function(authData) {
         $timeout(function() {
-          callback(authData, $firebase);
+          callback(authData);
         });
       });
     }
   };
 });
 
-app.service('currentUser', function () {
+app.service('CurrentUser', function () {
     var current_user = 'empty';
     var facebook_id = 'empty';
 
@@ -82,86 +83,116 @@ app.service('currentUser', function () {
         setFacebookID: function(value) {
             facebook_id = value;
         }
-
     };
 });
 
 
-app.controller("LoginCtrl", function($scope, Auth, currentUser) {
-  // Initially set no user to be logged in
-  $scope.user = null;
-  $scope.picture = 'img/pic1.jpg'
-  $scope.userName = 'Not Logged In'
+app.controller("LoginCtrl", function($scope, Auth, CurrentUser, Firebase, $cordovaOauth,  $firebaseAuth) {
 
+  // Initialize non-logged in user
+  var auth = $firebaseAuth(fb);
+  firebase_connect = new Firebase('https://brawlr.firebaseio.com/')
+  var my_authData = firebase_connect.getAuth();
+  $scope.user = my_authData
+  if ($scope.user) {
+    $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
+    $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
+  }
 
-  // Logs a user in with Facebook
-  // Calls $authWithOAuthPopup on $firebaseAuth
-  // This will be processed by the InAppBrowser plugin on mobile
-  // We can add the user to $scope here or in the $onAuth fn
-  $scope.login = function scopeLogin() {
-    Auth.loginWithFacebook()
-    .then(function(authData){
-      console.log('We are logged in!', authData);
-      currentUser.setUserName($scope.userName)
-      currentUser.setFacebookID($scope.user.facebook.id)
-    })
-    .catch(function(error) {
-      console.error(error);
-    });
-  };
-
-  // Logs a user out
-  $scope.logout = Auth.logout;
-
-  // detect changes in authentication state
-  // when a user logs in, set them to $scope
-  Auth.onAuth(function(authData, $firebase) {
-    var ref = new Firebase('https://brawlr.firebaseio.com/Users');
-    var users = $firebase(ref);
-    $scope.picture = 'img/pic1.jpg'
-    $scope.userName = 'Not Logged In'
-
-    $scope.user = authData;
-    if ($scope.user) {
-      console.log("Got a user:");
-      $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
-      $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
-      users.$update($scope.user.facebook.id, {
-        uid: $scope.user.uid,
-        fbid: $scope.user.facebook.id,
-        picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
-        accessToken: $scope.user.facebook.accessToken,
+  $scope.login = function() {
+      console.log('Authdata was: ');
+      console.log(JSON.stringify(my_authData));
+      $cordovaOauth.facebook("917369228283594", ["email"]).then(function(result) {
+          auth.$authWithOAuthToken("facebook", result.access_token).then(function(authData) {
+              $scope.user = authData;
+              $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
+              $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
+              console.log('We are logged in!', authData);
+              CurrentUser.setUserName($scope.userName)
+              CurrentUser.setFacebookID($scope.user.facebook.id)
+              console.log('Now it is: ');
+              my_authData = firebase_connect.getAuth();
+              console.log(JSON.stringify(my_authData));
+          }, function(error) {
+              console.error("ERROR: " + error);
+          });
+      }, function(error) {
+          console.log("ERROR: " + error);
       });
+  }
+  $scope.logout = function() {
+    auth.$unauth();
+    $scope.user = null;
+    $scope.picture = null;
+    $scope.userName = null;    
+  }
 
-      $scope.current_user = {
-        uid: $scope.user.uid,
-        fbid: $scope.user.facebook.id,
-        picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
-        accessToken: $scope.user.facebook.accessToken,
-      }
-    }
-  });
+  // // Logs a user in with Facebook
+  // // Calls $authWithOAuthPopup on $firebaseAuth
+  // // This will be processed by the InAppBrowser plugin on mobile
+  // // We can add the user to $scope here or in the $onAuth fn
+  // $scope.login = function scopeLogin() {
+  //   thirdPartyLogin('facebook')
+  //   .then(function(authData){
+
+  //   })
+  //   .catch(function(error) {
+  //     console.error(error);
+  //   });
+  // };
+
+  // // Logs a user out
+  // $scope.logout = Auth.logout;
+
+  // // detect changes in authentication state
+  // // when a user logs in, set them to $scope
+  // Auth.onAuth(function(authData, $firebase) {
+  //   var ref = new Firebase('https://brawlr.firebaseio.com/Users');
+  //   // var users = $firebase(ref);
+  //   $scope.picture = 'img/pic1.jpg'
+  //   $scope.userName = 'Not Logged In'
+
+  //   $scope.user = authData;
+  //   if ($scope.user) {
+  //     CurrentUser.setUserName($scope.userName)
+  //     CurrentUser.setFacebookID($scope.user.facebook.id)
+  //     $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
+  //     $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
+  //     // users.$update($scope.user.facebook.id, {
+  //     //   uid: $scope.user.uid,
+  //     //   fbid: $scope.user.facebook.id,
+  //     //   picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
+  //     //   accessToken: $scope.user.facebook.accessToken,
+  //     // });
+
+  //     $scope.current_user = {
+  //       uid: $scope.user.uid,
+  //       fbid: $scope.user.facebook.id,
+  //       picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
+  //       accessToken: $scope.user.facebook.accessToken,
+  //     }
+  //   }
+  // });
 
 });
 
 
-app.service('Card', function ($firebase, FBURL) {
-  var ref = new Firebase(FBURL);
-  var cards = $firebase(ref.child('Users')).$asArray();
+app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
+  var cards = $firebaseArray(new Firebase(FBURL + '/users'));
   
   this.all = cards;
   this.create = function (user) {
       return users.$add(user);
   },
   this.get = function(userId) {
-      return $firebase(ref.child('Users').child(userId)).$asObject();
+      return $firebaseObject(new Firebase(FBURL + '/users/' + userId));
   },
   this.delete = function (user) {
       return users.$remove(user);
   }
 });
 
-app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, currentUser) {
+app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, CurrentUser, $firebaseObject) {
     $scope.cards = Card.all;
     
     var ref = new Firebase(FBURL + '/Swipes');
@@ -170,8 +201,8 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     $scope.current_user = $scope.authObj.$getAuth();
     $scope.userName = $scope.current_user.facebook.cachedUserProfile.first_name;
 
-    var newRef = new Firebase(FBURL +'/Swipes/' + currentUser.getFacebookID())
-    var swipes = $firebase(newRef);
+    var newRef = new Firebase(FBURL +'/Swipes/' + CurrentUser.getFacebookID())
+    var swipes = $firebaseObject(newRef);
 
     $scope.cardSwipedLeft = function(index) {
       
@@ -202,18 +233,26 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     }
 });
 
-app.controller('ProfileCtrl', function ($scope, $firebase, currentUser) {
-    $scope.userName = currentUser.getUserName()
-    $scope.facebook_id = currentUser.getFacebookID()
-
-    $scope.title = $scope.userName + "'s Profile";
+app.controller('ProfileCtrl', function ($scope, $firebaseObject, CurrentUser) {
+    $scope.userName = CurrentUser.getUserName()
+    $scope.facebook_id = CurrentUser.getFacebookID()
     $scope.formData = {};
 
+    if ($scope.facebook_id != 'empty') {
+      var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.facebook_id)
+      var synced_profile = $firebaseObject(ref);
+      synced_profile.$bindTo($scope, "data");
+      console.log(synced_profile)
+    }
+    
+
+    $scope.title = $scope.userName + "'s Profile";
+
+
+
     $scope.save_profile = function(index) {
-      var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.facebook_id);
-      profiles = $firebase(ref);
       console.log('Updating Profile for user with FB ID: ' + $scope.facebook_id);
-      profiles.$update( $scope.formData );
+      // profile.$update( $scope.formData );
     };
 });
 
