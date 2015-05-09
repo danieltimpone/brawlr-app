@@ -20,10 +20,10 @@ app.run(function($ionicPlatform, $rootScope) {
 
   // On sate
   $rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
-  if (toState.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
+  if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
     // User isn’t authenticated
     console.log("User tried to access " + toState + ", but they're not logged in!")
-    $state.transitionTo("login");
+    // $state.transitionTo("login");
     event.preventDefault(); 
   }
 });
@@ -168,9 +168,12 @@ app.config(function($stateProvider, $urlRouterProvider) {
         'login': {
           templateUrl: 'templates/login.html',
           controller: 'LoginCtrl',
-          authRequired: true
+          authRequired: true,
         }
-      }
+      },
+      data: {
+        authRequired: true,
+      },
     })
 
     $stateProvider.state('cards', {
@@ -179,9 +182,12 @@ app.config(function($stateProvider, $urlRouterProvider) {
         'cards': {
           templateUrl: 'templates/cards.html',
           controller: 'CardsCtrl',
-          authRequired: true
-        }
-      }
+          authRequired: true,
+        },
+      },
+      data: {
+        authRequired: true,
+      },
     })
 
     $stateProvider.state('profile', {
@@ -190,9 +196,12 @@ app.config(function($stateProvider, $urlRouterProvider) {
         profile: {
           templateUrl: 'templates/profile.html',
           controller: 'ProfileCtrl',
-          authRequired: true
-        }
-      }
+          authRequired: true,
+        },
+      },
+      data: {
+        authRequired: true,
+      },
     })
 
     $urlRouterProvider.otherwise('/login');
