@@ -143,9 +143,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     
     var ref = new Firebase(FBURL + '/Swipes');
     var swipes = $firebase(ref);
-    // var swipes = $firebase(ref.child('Swipes')).$asArray();
 
-    
     $scope.authObj = $firebaseAuth(ref);
     $scope.current_user = $scope.authObj.$getAuth();
     $scope.userName = $scope.current_user.facebook.cachedUserProfile.first_name;
@@ -157,7 +155,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
       var swipedUser = $scope.cards[index].$id;
 
       console.log(swipedUser);
-      
+
       swipes.$update($scope.userName, {
          swipedUser : "False", 
       });
