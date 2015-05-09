@@ -69,28 +69,7 @@ app.factory('Auth', function($firebaseAuth, $firebaseObject, Root, $timeout){
   };
 });
 
-app.service('CurrentUser', function () {
-    var current_user = 'empty';
-    var facebook_id = 'empty';
-
-    return {
-        getUserName: function () {
-            return current_user;
-        },
-        setUserName: function(value) {
-            current_user = value;
-        },
-        getFacebookID: function () {
-            return facebook_id;
-        },
-        setFacebookID: function(value) {
-            facebook_id = value;
-        }
-    };
-});
-
-
-app.controller("LoginCtrl", function($scope, Auth, CurrentUser, Firebase, $cordovaOauth,  $firebaseAuth) {
+app.controller("LoginCtrl", function($scope, Auth,  Firebase, $cordovaOauth,  $firebaseAuth) {
 
   // Initialize non-logged in user
   var auth = $firebaseAuth(fb);
@@ -179,6 +158,32 @@ app.controller("LoginCtrl", function($scope, Auth, CurrentUser, Firebase, $cordo
 
 });
 
+app.service('Match', function($q, $firebaseArray, $firebaseObject, $firebaseAuth, FBURL){
+  var ref = fb.child('Swipes');
+
+  this.isMatch = function(swipedUser, currentUser) {
+
+    return $q(function(resolve,reject){
+      var rightOnCurrent =  $firebaseObject(ref.child(swipedUser).child(currentUser).child('swipedRight'));
+
+      rightOnCurrent.$loaded().then(function(current){
+        if(current.$value == "True") {
+          console.log("returning true");
+          resolve(true);
+        }
+        else{
+          console.log("returning false");
+          resolve(false);
+        }
+      });
+    });
+    
+    
+  }
+  this.saveMatch = function(swipedUser, currentUser) {
+
+  }
+});
 
 app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
   var cards = $firebaseArray(new Firebase(FBURL + '/Users'));
@@ -195,7 +200,7 @@ app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
   }
 });
 
-app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, CurrentUser, $firebaseObject, $firebaseArray) {
+app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, Match, $firebaseObject, $firebaseArray) {
     $scope.cards = Card.all;
 
     var ref = new Firebase(FBURL + '/Swipes');
@@ -207,7 +212,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
       $scope.current_user = $scope.user.facebook.id;
     }
 
-    var newRef = new Firebase(FBURL +'/Swipes/' + $scope.current_user);
+    var newRef = ref.child($scope.current_user);
     var swipes = $firebaseObject(newRef);
 
     
@@ -215,22 +220,25 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
       
       $scope.swipedUser = $scope.cards[index].$id;
 
-      
-      newRef.child($scope.swipedUser).set({'swipedRight' : 
-        'False'});
+      newRef.child($scope.swipedUser).set({'swipedRight' : 'False'});
 
       console.log('Left swipe');
     }
 
     $scope.cardSwipedRight = function(index) {
         $scope.swipedUser = $scope.cards[index].$id;
-          console.log($scope.swipedUser);
+        console.log("Testing match truthiness")
+        my_match = Match.isMatch($scope.swipedUser, $scope.current_user);
+        my_match.then(function(matched){
+          console.log("DONE");
+          console.log("Match value: " + matched);
+        
+          newRef.child($scope.swipedUser).set({'swipedRight' : 'True'});
 
-          newRef.child($scope.swipedUser).set({'swipedRight' : 
-        'True'});
 
-
-        console.log('Right swipe');
+          console.log('Right swipe');
+        });
+        
     }
 
     $scope.cardDestroyed = function(index) {
