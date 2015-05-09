@@ -69,7 +69,8 @@ app.factory('Auth', function($firebaseAuth, $firebaseObject, Root, $timeout){
   };
 });
 
-app.controller("LoginCtrl", function($scope, Auth,  Firebase, $cordovaOauth,  $firebaseAuth) {
+
+app.controller("LoginCtrl", function($scope, Auth, CurrentUser, Firebase, $cordovaOauth,  $firebaseAuth, $firebaseObject) {
 
   // Initialize non-logged in user
   var auth = $firebaseAuth(fb);
@@ -77,8 +78,9 @@ app.controller("LoginCtrl", function($scope, Auth,  Firebase, $cordovaOauth,  $f
   var my_authData = firebase_connect.getAuth();
   $scope.user = my_authData
   if ($scope.user) {
-    $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
-    $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
+    var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.user.facebook.id)
+    var synced_profile = $firebaseObject(ref);
+    synced_profile.$bindTo($scope, "user");
   }
 
   $scope.login = function() {
@@ -217,7 +219,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
 
     
     $scope.cardSwipedLeft = function(index) {
-      
+      console.log(JSON.stringify($scope.cards));
       $scope.swipedUser = $scope.cards[index].$id;
 
       newRef.child($scope.swipedUser).set({'swipedRight' : 'False'});
@@ -248,26 +250,19 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
 });
 
 app.controller('ProfileCtrl', function ($scope, $firebaseObject, CurrentUser) {
-    $scope.userName = CurrentUser.getUserName()
-    $scope.facebook_id = CurrentUser.getFacebookID()
-    $scope.formData = {};
 
-    if ($scope.user) {
-      var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.facebook_id)
-      var synced_profile = $firebaseObject(ref);
-      synced_profile.$bindTo($scope, "data");
-      console.log(synced_profile)
-    }
+    firebase_connect = new Firebase('https://brawlr.firebaseio.com/')
+    var my_authData = firebase_connect.getAuth();
+    $scope.user = my_authData
+
+    var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.user.facebook.id)
+    var synced_profile = $firebaseObject(ref);
+    synced_profile.$bindTo($scope, "user");
+    console.log(JSON.stringify($scope.user))
     
 
     $scope.title = $scope.userName + "'s Profile";
 
-
-
-    $scope.save_profile = function(index) {
-      console.log('Updating Profile for user with FB ID: ' + $scope.facebook_id);
-      // profile.$update( $scope.formData );
-    };
 });
 
 app.config(function($stateProvider, $urlRouterProvider) {

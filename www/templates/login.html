@@ -6,8 +6,8 @@
 
     <!-- Logged-in user text -->
     <div class="card text-center">
-      <div class="item item-text-wrap" ng-show="user" ng-bind="userName"></div>
-      <img ng-src="{{picture}}" ng-show="user"/>
+      <div class="item item-text-wrap" ng-show="user" ng-bind="user.username"></div>
+      <img ng-src="{{user.picture}}" ng-show="user"/>
     </div>
 
     <button class="button button-full button-outline button-assertive" ng-click="logout()" ng-show="user" >Logout</button>
