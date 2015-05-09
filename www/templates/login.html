@@ -6,10 +6,9 @@
 
     <!-- Logged-in user text -->
     <div class="card">
-      <div class="item item-text-wrap" ng-hide="user">User not logged in</div>
-      <div class="item item-text-wrap" ng-show="userName" ng-bind="userName"></div>
+      <div class="item item-text-wrap" ng-show="user" ng-bind="userName"></div>
       <div class="item item-text-wrap" ng-show="user" ng-bind="user.uid"></div>
-      <img ng-src="{{picture}}" />
+      <img ng-src="{{picture}}" ng-show="user"/>
     </div>
 
     <button class="button button-full button-outline button-assertive" ng-click="logout()" ng-show="user" >Logout</button>
