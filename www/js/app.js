@@ -3,10 +3,10 @@
 // angular.module is a global place for creating, registering and retrieving Angular modules
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
-var app = angular.module("starter", ["ionic", 'ionic.contrib.ui.tinderCards', "firebase", 'ngCordovaOauth']);
+var app = angular.module("starter", ["ionic", 'ionic.contrib.ui.tinderCards', "firebase", 'ngCordovaOauth', 'ui.router']);
 var fb = new Firebase("https://brawlr.firebaseio.com");
 // do all the things ionic needs to get going
-app.run(function($ionicPlatform, $rootScope) {
+app.run(function($ionicPlatform, $rootScope, $state) {
     $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -20,13 +20,16 @@ app.run(function($ionicPlatform, $rootScope) {
 
   // On sate
   $rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
-  // if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
-  //   // User isn’t authenticated
-  //   console.log("User tried to access " + toState + ", but they're not logged in!")
-  //   // $state.transitionTo("login");
-  //   event.preventDefault(); 
-  // }
-});
+    if (toState.data.authRequired) {// && !$firebaseAuth.isAuthenticated()){ //Assuming the AuthService holds authentication logic
+      // User isn’t authenticated
+      firebase_connect = new Firebase('https://brawlr.firebaseio.com/')
+      var my_authData = firebase_connect.getAuth();
+      if (!my_authData) {
+        event.preventDefault(); 
+        $state.go('login', {}, {reload: true})        
+      }
+    }
+  });
 
 });
 
@@ -178,14 +181,14 @@ app.controller("LoginCtrl", function($scope, Auth, CurrentUser, Firebase, $cordo
 
 
 app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
-  var cards = $firebaseArray(new Firebase(FBURL + '/users'));
+  var cards = $firebaseArray(new Firebase(FBURL + '/Users'));
   
   this.all = cards;
   this.create = function (user) {
       return users.$add(user);
   },
   this.get = function(userId) {
-      return $firebaseObject(new Firebase(FBURL + '/users/' + userId));
+      return $firebaseObject(new Firebase(FBURL + '/Users/' + userId));
   },
   this.delete = function (user) {
       return users.$remove(user);
@@ -238,7 +241,7 @@ app.controller('ProfileCtrl', function ($scope, $firebaseObject, CurrentUser) {
     $scope.facebook_id = CurrentUser.getFacebookID()
     $scope.formData = {};
 
-    if ($scope.facebook_id != 'empty') {
+    if ($scope.user) {
       var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.facebook_id)
       var synced_profile = $firebaseObject(ref);
       synced_profile.$bindTo($scope, "data");
@@ -263,11 +266,10 @@ app.config(function($stateProvider, $urlRouterProvider) {
         'login': {
           templateUrl: 'templates/login.html',
           controller: 'LoginCtrl',
-          authRequired: true,
         }
       },
       data: {
-        authRequired: true,
+        authRequired: false,
       },
     })
 
@@ -277,7 +279,6 @@ app.config(function($stateProvider, $urlRouterProvider) {
         'cards': {
           templateUrl: 'templates/cards.html',
           controller: 'CardsCtrl',
-          authRequired: true,
         },
       },
       data: {
@@ -291,7 +292,6 @@ app.config(function($stateProvider, $urlRouterProvider) {
         profile: {
           templateUrl: 'templates/profile.html',
           controller: 'ProfileCtrl',
-          authRequired: true,
         },
       },
       data: {
