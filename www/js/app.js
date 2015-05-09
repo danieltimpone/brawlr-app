@@ -104,6 +104,32 @@ app.controller("LoginCtrl", function($scope, Auth, Firebase, $cordovaOauth,  $fi
 
 });
 
+app.service('Match', function($q, $firebaseArray, $firebaseObject, $firebaseAuth, FBURL){
+  var ref = fb.child('Swipes');
+
+  this.isMatch = function(swipedUser, currentUser) {
+
+    return $q(function(resolve,reject){
+      var rightOnCurrent =  $firebaseObject(ref.child(swipedUser).child(currentUser).child('swipedRight'));
+
+      rightOnCurrent.$loaded().then(function(current){
+        if(current.$value == "True") {
+          console.log("returning true");
+          resolve(true);
+        }
+        else{
+          console.log("returning false");
+          resolve(false);
+        }
+      });
+    });
+    
+    
+  }
+  this.saveMatch = function(swipedUser, currentUser) {
+
+  }
+});
 
 app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
   var cards = $firebaseArray(new Firebase(FBURL + '/Users'));
@@ -152,14 +178,28 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     
     $scope.cardSwipedLeft = function(index) {
       $scope.swipedUser = $scope.cards[index].$id;
+      console.log(JSON.stringify($scope.cards));
+      $scope.swipedUser = $scope.cards[index].$id;
+
       newRef.child($scope.swipedUser).set({'swipedRight' : 'False'});
+
+      console.log('Left swipe');
     }
 
     $scope.cardSwipedRight = function(index) {
-      console.log('Right swipe');
-      $scope.swipedUser = $scope.cards[index].$id;
-      console.log($scope.swipedUser);
-      newRef.child($scope.swipedUser).set({'swipedRight' : 'True'});
+        $scope.swipedUser = $scope.cards[index].$id;
+        console.log("Testing match truthiness")
+        my_match = Match.isMatch($scope.swipedUser, $scope.current_user);
+        my_match.then(function(matched){
+          console.log("DONE");
+          console.log("Match value: " + matched);
+        
+          newRef.child($scope.swipedUser).set({'swipedRight' : 'True'});
+
+
+          console.log('Right swipe');
+        });
+        
     }
 
     $scope.cardDestroyed = function(index) {
