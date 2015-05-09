@@ -126,7 +126,7 @@ app.controller("LoginCtrl", function($scope, Auth, currentUser) {
       console.log("Got a user:");
       $scope.picture = 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300';
       $scope.userName = $scope.user.facebook.cachedUserProfile.first_name;
-      users.$update($scope.userName, {
+      users.$update($scope.user.facebook.id, {
         uid: $scope.user.uid,
         fbid: $scope.user.facebook.id,
         picture: 'http://graph.facebook.com/' + $scope.user.facebook.id + '/picture?width=300&height=300',
@@ -170,7 +170,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     $scope.current_user = $scope.authObj.$getAuth();
     $scope.userName = $scope.current_user.facebook.cachedUserProfile.first_name;
 
-    var newRef = new Firebase(FBURL +'/Swipes/' + $scope.userName)
+    var newRef = new Firebase(FBURL +'/Swipes/' + $scope.user.facebook.id)
     var swipes = $firebase(newRef);
 
     $scope.cardSwipedLeft = function(index) {
@@ -209,12 +209,11 @@ app.controller('ProfileCtrl', function ($scope, $firebase, currentUser) {
     $scope.title = $scope.userName + "'s Profile";
     $scope.formData = {};
 
-    var ref = new Firebase('https://brawlr.firebaseio.com/Users');
-    profiles = $firebase(ref);
-
     $scope.save_profile = function(index) {
-
-      console.log();
+      var ref = new Firebase('https://brawlr.firebaseio.com/Users/' + $scope.facebook_id);
+      profiles = $firebase(ref);
+      console.log('Updating Profile for user with FB ID: ' + $scope.facebook_id);
+      profiles.$update( $scope.formData );
     };
 });
 
