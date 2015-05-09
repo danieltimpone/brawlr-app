@@ -165,7 +165,7 @@ app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
 
 });
 
-app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, $firebaseObject, $firebaseArray) {
+app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, $firebaseObject, $firebaseArray, Match) {
     var my_authData = firebase_connect.getAuth();
     $scope.user = my_authData
 
@@ -189,7 +189,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
     $scope.cardSwipedRight = function(index) {
         $scope.swipedUser = $scope.cards[index].$id;
         console.log("Testing match truthiness")
-        my_match = Match.isMatch($scope.swipedUser, $scope.current_user);
+        my_match = Match.isMatch($scope.swipedUser, $scope.user.facebook.id);
         my_match.then(function(matched){
           console.log("DONE");
           console.log("Match value: " + matched);
