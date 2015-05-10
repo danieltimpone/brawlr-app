@@ -7,19 +7,32 @@
       <img src="img/gloveIcon2.png"  height="32" width="32">
     </button>
   </ion-nav-buttons>
-  <ion-content padding="true">
+  <ion-content>
 
-        <div class="list card" ng-click="myGoBack()">
-
-          <div class="item item-avatar">
-            <h2>{{ card.username }}</h2>
-            <p>{{ card.description }}</p>
-          </div>
-
-          <div class="item item-image">
-            <img src="{{card.picture}}">
-          </div>
-
-        </div>
+    <div class="list card" ng-click="myGoBack()">
+      <div class="item text-center">
+        <h2>{{ card.username }}</h2>
+        <p>{{ card.description }}</p>
+      </div>
+      <div class="item item-image">
+        <img src="{{card.picture}}">
+      </div>
+      <div class="item">
+        <strong>
+          Height
+        </strong>
+        <p class="pull-right">
+          {{card.height}}    
+        </p>        
+      </div>
+      <div class="item">
+        <strong>
+          Weight
+        </strong>
+        <p class="pull-right">
+          {{card.weight}}    
+        </p>        
+      </div>
+    </div>
     </ion-content>
 </ion-view>
