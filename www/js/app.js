@@ -134,8 +134,6 @@ app.service('Match', function($q, $firebaseArray, $firebaseObject, $firebaseAuth
 app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
   var cards = $firebaseArray(new Firebase(FBURL + '/Users'));
 
-  this.all = cards;
-
   this.create = function (user) {
       return users.$add(user);
   },
@@ -191,13 +189,7 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
         console.log("Testing match truthiness")
         my_match = Match.isMatch($scope.swipedUser, $scope.user.facebook.id);
         my_match.then(function(matched){
-          console.log("DONE");
-          console.log("Match value: " + matched);
-        
           newRef.child($scope.swipedUser).set({'swipedRight' : 'True'});
-
-
-          console.log('Right swipe');
         });
         
     }
