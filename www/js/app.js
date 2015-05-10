@@ -25,11 +25,9 @@ app.run(function($ionicPlatform, $rootScope, $state) {
 
   // Prevent unAuthed users from viewing auth-required states
   $rootScope.$on('$stateChangeStart', function(event, toState) {
-    if (toState.data.authRequired) {
-      if (!fb.getAuth()) {
+    if (toState.data.authRequired && !fb.getAuth()) {
         event.preventDefault();
         $state.go('login', {}, {reload: true});
-      }
     }
   });
 
@@ -38,6 +36,9 @@ app.run(function($ionicPlatform, $rootScope, $state) {
 // This is a factory
 app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebaseObject) {
   var fbAuth = $firebaseAuth(fb);
+
+  authData = null;
+
   return {
     login: function() {
       return $q(function(resolve, reject) {
@@ -69,7 +70,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
                 returnedAuthData.isNewUser = false;
               }
             });
-
+            authData = fb.getAuth()
             resolve(returnedAuthData);
           }, function(error) {
               console.error('ERROR in $authWithOAuthToken: ' + error);
@@ -83,6 +84,16 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
     },
     logout: function() {
       fbAuth.$unauth();
+      authData = null;
+    },
+    getAuthData: function() {
+      if (authData) {
+        return authData;
+      }
+      else {
+        authData = fb.getAuth();
+        return authData;
+      }
     }
   };
 });
@@ -94,12 +105,14 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
     var syncedProfile = $firebaseObject(ref);
     syncedProfile.$bindTo($scope, 'user');
   }
+  console.log("Login Control");
 
   // Initialize non-logged in user
-  $scope.user = fb.getAuth();
+  $scope.user = FacebookAuth.getAuthData();
   // Get authData.  Bind it to profile if it exists
   if ($scope.user) {
-    $state.go('cards', {}, {reload: true});
+    console.log("In LoginCtrl w/ $scope.user.  Going to cards.")
+    $state.go('cards', {}, {reload: true, notify: true});
   }
 
   $scope.login = function() {
@@ -121,20 +134,16 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
     });
   };
 
-  $scope.logout = function() {
-    FacebookAuth.logout();
-    $scope.user = null;
-  };
-
 });
 
-app.service('Match', function($q, $firebaseObject) {
-  var ref = fb.child('Swipes');
+app.service('Match', function($q, $firebaseObject, $firebaseArray) {
+  var swipes_ref = fb.child('Swipes');
+  var matches = $firebaseArray(fb.child('Matches'));
 
   this.isMatch = function(swipedUser, currentUser) {
 
     return $q(function(resolve, reject) {
-      var rightOnCurrent =  $firebaseObject(ref.child(swipedUser).child(currentUser).child('swipedRight'));
+      var rightOnCurrent =  $firebaseObject(swipes_ref.child(swipedUser).child(currentUser).child('swipedRight'));
 
       rightOnCurrent.$loaded().then(function(current) {
         if (current.$value == 'True') {
@@ -147,11 +156,37 @@ app.service('Match', function($q, $firebaseObject) {
     });
   };
 
+  myAvailableMatches = null;
+
+  this.myMatchList = function(reload) {
+    reload = reload || false;
+    var result = [];
+    matches = $firebaseArray(fb.child('Matches'));
+    if (!myAvailableMatches || reload) {
+      matches.$loaded()
+        .then(function(loadedMatches) {
+          for (var i = 0; i < loadedMatches.length; i++) {
+            // Make sure you're not getting yourself
+            result.push(loadedMatches[i]);
+          }
+          myAvailableMatches = result;
+          return myAvailableMatches;
+        })
+        .catch(function(error) {
+          console.log('Error:', error);
+        });
+    }
+    else {
+      console.log("Grabbin old matches");
+      return myAvailableMatches;
+    }
+
+  };
 });
 
 app.service('Card', function($firebaseArray, $firebaseObject) {
   var cards = $firebaseArray(fb.child('Users'));
-  var myAvailableMatches = null;
+  var myAvailableCards = null;
 
   function shuffle(myArray) {
       var counter = myArray.length, temp, index;
@@ -174,11 +209,11 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
   };
 
   this.get = function(userId) {
-    if (myAvailableMatches) {
-      for (var i = 0; i < myAvailableMatches.length; i++) {
-        if (myAvailableMatches[i].$id == userId) {
-          myAvailableMatches[i].ready = true
-          return myAvailableMatches[i]
+    if (myAvailableCards) {
+      for (var i = 0; i < myAvailableCards.length; i++) {
+        if (myAvailableCards[i].$id == userId) {
+          myAvailableCards[i].ready = true
+          return myAvailableCards[i]
         }
       }
     }
@@ -187,17 +222,18 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
 
   this.getByIndex = function(cardIndex) {
-    if (myAvailableMatches) {
-        return myAvailableMatches[cardIndex]
+    if (myAvailableCards) {
+        return myAvailableCards[cardIndex]
       }
     return null;
   };
 
-  this.availableMatches = function(userID, reload) {
+  this.availableCards = function(userID, reload) {
 
     reload = reload || false;
     var result = [];
-    if (!myAvailableMatches || reload) {
+    var cards = $firebaseArray(fb.child('Users'));
+    if (!myAvailableCards || reload) {
       cards.$loaded()
         .then(function(loadedCards) {
           // Iterate through cards
@@ -212,11 +248,11 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
         .catch(function(error) {
           console.log('Error:', error);
         });
-      myAvailableMatches = result;
+      myAvailableCards = result;
       return result;
     }
     else {
-      return myAvailableMatches
+      return myAvailableCards
     }
 
   };
@@ -226,16 +262,16 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
 
 
-app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state, $ionicHistory) {
-  $scope.user = fb.getAuth();
-  $scope.cards = Card.availableMatches($scope.user.facebook.id);
+app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state, $ionicHistory, FacebookAuth) {
+  $scope.user = FacebookAuth.getAuthData();
+  $scope.cards = Card.availableCards($scope.user.facebook.id);
   $scope.refresherEnabled = true;
 
   var ref = fb.child('Swipes').child($scope.user.facebook.id);
   var matchesRef = fb.child('Matches');
   
   $scope.doRefresh = function() {
-    $scope.cards = Card.availableMatches($scope.user.facebook.id, true);
+    $scope.cards = Card.availableCards($scope.user.facebook.id, true);
     $scope.detailedCard = null;
     $scope.$broadcast('scroll.refreshComplete');
   }
@@ -247,6 +283,7 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
   };
 
   $scope.cardSwipedRight = function(index) {
+    console.log('Right swipe');
     $scope.swipedUser = $scope.cards[index].$id;
     var myMatch = Match.isMatch($scope.swipedUser, $scope.user.facebook.id);
     myMatch.then(function(matched) {
@@ -262,7 +299,7 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
     $scope.cards.splice(index, 1);
     if ($scope.cards.length < 1) {
         console.log("You ran out of cards!");
-        $scope.cards = Card.availableMatches($scope.user.facebook.id, true);  
+        $scope.cards = Card.availableCards($scope.user.facebook.id, true);  
     }
   };
 
@@ -289,16 +326,19 @@ app.controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory,
   };
 });
 
+app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray) {
+  $scope.myMatches = $firebaseArray(fb.child('Matches'));
+})
+
 app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
-  $scope.user = fb.getAuth();
+  $scope.user = FacebookAuth.getAuthData();
   var ref = fb.child('Users').child($scope.user.facebook.id);
   var syncedProfile = $firebaseObject(ref);
   syncedProfile.$bindTo($scope, 'user');
 
   $scope.logout = function() {
     FacebookAuth.logout();
-    $scope.user = null;
-    $state.go('login', {}, {reload: true});
+    $state.go('login', {}, {reload: true, notify: true});
   };
 
 });
@@ -333,12 +373,17 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
 
   $stateProvider.state('profile', {
     url: '/profile',
-    views: {
-      'profile': {
-        templateUrl: 'templates/profile.html',
-        controller: 'ProfileCtrl',
-      },
+    templateUrl: 'templates/profile.html',
+    controller: 'ProfileCtrl',
+    data: {
+      authRequired: true,
     },
+  });
+
+  $stateProvider.state('matches', {
+    url: '/matches',
+    templateUrl: 'templates/matches.html',
+    controller: 'MatchesCtrl',
     data: {
       authRequired: true,
     },
@@ -350,8 +395,8 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
   $ionicConfigProvider.navBar.alignTitle('center');
 });
 
-app.controller('AppCtrl', function($scope, $ionicPopover, $state) {
-  $scope.user = fb.getAuth();
+app.controller('AppCtrl', function($scope, $ionicPopover, $state, FacebookAuth) {
+  $scope.user = FacebookAuth.getAuthData();
   $scope.headerClicked = function () {
     $state.go('cards', {}, {});
   };

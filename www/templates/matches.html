@@ -1,0 +1,21 @@
+<ion-view title="BRAWLR">
+  <ion-nav-buttons side="left">
+    <button class="button icon ion-person" ui-sref="profile"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+    <button class="button icon button-icon" ui-sref="matches">
+      <img src="img/gloveIcon2.png"  height="32" width="32">
+    </button>
+  </ion-nav-buttons>
+  <ion-content>
+    <ion-list class="list">
+      <ion-item ng-repeat="m in myMatches">
+          <a class="item item-avatar" href="#">
+            <img src="http://graph.facebook.com/10152962985952326/picture?width=300&height=300" class='avatar-frame'>
+            <h2>Venkman</h2>
+            <p>Back off, man. I'm a scientist.</p>
+          </a>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-view>
