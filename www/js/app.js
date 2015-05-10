@@ -150,9 +150,29 @@ app.service('Match', function($q, $firebaseObject) {
 app.service('Card', function($firebaseArray, $firebaseObject) {
   var cards = $firebaseArray(fb.child('Users'));
 
+  function shuffle(myArray) {
+      var counter = myArray.length, temp, index;
+
+      // While there are elements in the myArray
+      while (counter > 0) {
+          // Pick a random index
+          index = Math.floor(Math.random() * counter);
+
+          // Decrease counter by 1
+          counter--;
+
+          // And swap the last element with it
+          temp = myArray[counter];
+          myArray[counter] = myArray[index];
+          myArray[index] = temp;
+      }
+
+      return myArray;
+  };
+
   this.get = function(userId) {
     return $firebaseObject(fb.child('Users').child(userId));
-  },
+  }
 
   this.availableMatches = function(userID) {
     var result = [];
@@ -166,6 +186,7 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
             result.push(loadedCards[i]);
           }
         }
+        result = shuffle(result)
       })
       .catch(function(error) {
         console.log('Error:', error);
@@ -175,12 +196,19 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
 });
 
+
+
 app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state) {
   $scope.user = fb.getAuth();
   $scope.cards = Card.availableMatches($scope.user.facebook.id);
 
   var ref = fb.child('Swipes').child($scope.user.facebook.id);
   var matchesRef = fb.child('Matches');
+
+  $scope.doRefresh = function() {
+    $scope.cards = Card.availableMatches($scope.user.facebook.id);
+    $scope.$broadcast('scroll.refreshComplete');
+  }
 
   $scope.cardSwipedLeft = function(index) {
     $scope.swipedUser = $scope.cards[index].$id;
@@ -299,32 +327,6 @@ app.controller('AppCtrl', function($scope, $ionicPopover, $state) {
 
   $scope.headerClicked = function () {
     $state.go('cards', {}, {});
-  }
-
-  $ionicPopover.fromTemplateUrl('templates/popover.html', {
-    scope: $scope,
-  }).then(function(popover) {
-    $scope.popover = popover;
-  });
-
-  $scope.openPopover = function($event) {
-    console.log('POPOVER OPENING');
-    $scope.popover.show($event);
   };
-  $scope.closePopover = function() {
-    console.log('POPOVER CLOSING');
-    $scope.popover.hide();
-  };
-  //Cleanup the popover when we're done with it!
-  $scope.$on('$destroy', function() {
-    $scope.popover.remove();
-  });
-  // Execute action on hide popover
-  $scope.$on('popover.hidden', function() {
-    // Execute action
-  });
-  // Execute action on remove popover
-  $scope.$on('popover.removed', function() {
-    // Execute action
-  });
+
 });
