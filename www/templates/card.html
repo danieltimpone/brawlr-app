@@ -11,18 +11,18 @@
 
     <div class="list card" ng-click="myGoBack()">
       <div class="item text-center">
-        <h2>{{ card.username }}</h2>
-        <p>{{ card.description }}</p>
+        <h2>{{ singleCard.username }}</h2>
+        <p>{{ singleCard.description }}</p>
       </div>
       <div class="item item-image">
-        <img src="{{card.picture}}">
+        <img src="{{singleCard.picture}}">
       </div>
       <div class="item">
         <strong>
           Height
         </strong>
         <p class="pull-right">
-          {{card.height}}    
+          {{singleCard.height}}    
         </p>        
       </div>
       <div class="item">
@@ -30,7 +30,7 @@
           Weight
         </strong>
         <p class="pull-right">
-          {{card.weight}}    
+          {{singleCard.weight}}    
         </p>        
       </div>
     </div>
