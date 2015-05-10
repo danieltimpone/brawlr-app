@@ -97,7 +97,7 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
   $scope.user = fb.getAuth();
   // Get authData.  Bind it to profile if it exists
   if ($scope.user) {
-    $state.go('cards', {}, {reload: true});
+    $state.go('cards', {}, {});
   }
 
   $scope.login = function() {
@@ -175,7 +175,7 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
 });
 
-app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match) {
+app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state) {
   $scope.user = fb.getAuth();
   $scope.cards = Card.availableMatches($scope.user.facebook.id);
 
@@ -204,6 +204,20 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match) {
     $scope.cards.splice(index, 1);
   };
 
+  $scope.singleCardView = function(card) {
+    console.log(JSON.stringify(card));
+    console.log("goin for it")
+    $state.go('cardDetail', {'cardID': card.$id},  {});
+  }
+});
+
+app.controller('CardCtrl', function($scope, $stateParams, $ionicHistory, Card) {
+  $scope.card = Card.get($stateParams.cardID);
+
+  $scope.myGoBack = function() {
+    console.log("GOIN BACK");
+    $ionicHistory.goBack();
+  };
 });
 
 app.controller('ProfileCtrl', function($scope, $firebaseObject, FacebookAuth) {
@@ -241,15 +255,30 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
         templateUrl: 'templates/cards.html',
         controller: 'CardsCtrl',
       },
+
     },
     data: {
       authRequired: true,
     },
   });
 
+  $stateProvider.state('cardDetail', {
+    url: '/card/:cardID',
+    views: {
+      'card': {
+        templateUrl: 'templates/card.html',
+        controller: 'CardCtrl',
+      },
+    },
+    data: {
+      authRequired: true,
+    },
+  });
+
+
   $stateProvider.state('profile', {
     url: '/profile',
-    'views': {
+    views: {
       'profile': {
         templateUrl: 'templates/profile.html',
         controller: 'ProfileCtrl',
@@ -266,7 +295,11 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
   $ionicConfigProvider.navBar.alignTitle('center');
 });
 
-app.controller('AppCtrl', function($scope, $ionicPopover) {
+app.controller('AppCtrl', function($scope, $ionicPopover, $state) {
+
+  $scope.headerClicked = function () {
+    $state.go('cards', {}, {});
+  }
 
   $ionicPopover.fromTemplateUrl('templates/popover.html', {
     scope: $scope,
