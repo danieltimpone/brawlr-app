@@ -1,0 +1,25 @@
+<ion-view title="BRAWLR">
+  <ion-nav-buttons side="left">
+    <button class="button icon ion-person" ui-sref="profile"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+    <button class="button icon button-icon">
+      <img src="img/gloveIcon2.png"  height="32" width="32">
+    </button>
+  </ion-nav-buttons>
+  <ion-content padding="true">
+
+        <div class="list card" ng-click="myGoBack()">
+
+          <div class="item item-avatar">
+            <h2>{{ card.username }}</h2>
+            <p>{{ card.description }}</p>
+          </div>
+
+          <div class="item item-image">
+            <img src="{{card.picture}}">
+          </div>
+
+        </div>
+    </ion-content>
+</ion-view>
