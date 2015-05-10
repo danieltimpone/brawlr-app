@@ -126,9 +126,6 @@ app.service('Match', function($q, $firebaseArray, $firebaseObject, $firebaseAuth
     
     
   }
-  this.saveMatch = function(swipedUser, currentUser) {
-
-  }
 });
 
 app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
@@ -167,15 +164,16 @@ app.service('Card', function ($firebaseArray, $firebaseObject, FBURL) {
 
 app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card, $firebase, FBURL, $firebaseObject, $firebaseArray, Match) {
     var my_authData = firebase_connect.getAuth();
-    $scope.user = my_authData
+    $scope.user = my_authData;
 
-    $scope.cards = Card.available_matches($scope.user.facebook.id)
+    $scope.cards = Card.available_matches($scope.user.facebook.id);
 
     var ref = new Firebase(FBURL + '/Swipes');
     var newRef = new Firebase(FBURL +'/Swipes/' + $scope.user.facebook.id);
+    var matchesRef = new Firebase(FBURL+'/Matches');
+
     var swipes = $firebaseObject(newRef);
 
-    
     $scope.cardSwipedLeft = function(index) {
       $scope.swipedUser = $scope.cards[index].$id;
       console.log(JSON.stringify($scope.cards));
@@ -191,10 +189,15 @@ app.controller('CardsCtrl', function($scope, $firebaseAuth, TDCardDelegate, Card
         console.log("Testing match truthiness")
         my_match = Match.isMatch($scope.swipedUser, $scope.user.facebook.id);
         my_match.then(function(matched){
-          console.log("DONE");
+          
           console.log("Match value: " + matched);
         
           newRef.child($scope.swipedUser).set({'swipedRight' : 'True'});
+
+          if(matched){
+            var matchId = $scope.swipedUser + $scope.user.facebook.id;
+            matchesRef.child(matchId).child('Messages').set({'default': 'He called you a bitch'});
+          }
 
 
           console.log('Right swipe');
