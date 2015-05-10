@@ -39,7 +39,7 @@
   </head>
 
   <body ng-app="starter" ng-controller="AppCtrl" class="platform-ionic">
-  <ion-nav-bar class="bar-assertive"></ion-nav-bar>
+  <ion-nav-bar class="bar-assertive" ng-click="headerClicked()"></ion-nav-bar>
 <!--     <div class="bar bar-header">
         <button class="button button-icon" ui-sref="cards">
           <img src="img/gloveIcon2.png"  height="32" width="32">
@@ -57,6 +57,9 @@
       </ion-tab>
       <ion-tab icon="ion-android-sad" ui-sref="cards">
         <ion-nav-view name="cards"></ion-nav-view>
+      </ion-tab>
+      <ion-tab icon="ion-android-sad" ui-sref="card">
+        <ion-nav-view name="card"></ion-nav-view>
       </ion-tab>
       <ion-tab icon="ion-person" ui-sref="profile">
         <ion-nav-view name="profile"></ion-nav-view>
