@@ -54,6 +54,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
                 console.log('Creating new user!');
                 returnedAuthData.username = returnedAuthData.facebook.displayName;
                 fb.child('Users').child(returnedAuthData.facebook.id).set(returnedAuthData);
+                returnedAuthData.isNewUser = true;
               }
               // Existing User. Update shit
               else {
@@ -63,6 +64,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
                 userObject.expires = returnedAuthData.expires;
                 userObject.token = returnedAuthData.token;
                 userObject.$save();
+                returnedAuthData.isNewUser = false;
               }
             });
 
@@ -83,7 +85,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
   };
 });
 
-app.controller('LoginCtrl', function($scope, $firebaseObject, FacebookAuth) {
+app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
   //  This function will be used to bind the user data to the scope
   function bindToProfile(authData) {
     var ref = fb.child('Users').child(authData.facebook.id);
@@ -95,15 +97,21 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, FacebookAuth) {
   $scope.user = fb.getAuth();
   // Get authData.  Bind it to profile if it exists
   if ($scope.user) {
-    bindToProfile($scope.user);
+    $state.go('cards', {}, {reload: true});
   }
 
   $scope.login = function() {
     var authPromise = FacebookAuth.login();
     authPromise.then(function(authData) {
       if (authData) {
-        console.log('Auth Success!');
-        bindToProfile(authData);
+        if (authData.isNewUser) { 
+          console.log('Created new user. Goin to profile setup');
+          $state.go('profile', {}, {reload: true});
+        } 
+        else {
+          console.log('Existing user logged in.  Going to cards');
+          $state.go('cards', {}, {reload: true});
+        }
       }
       else {
         console.log('Authentication Failed');
@@ -198,14 +206,21 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match) {
 
 });
 
-app.controller('ProfileCtrl', function($scope, $firebaseObject) {
+app.controller('ProfileCtrl', function($scope, $firebaseObject, FacebookAuth) {
   $scope.user = fb.getAuth();
   var ref = fb.child('Users').child($scope.user.facebook.id);
   var syncedProfile = $firebaseObject(ref);
   syncedProfile.$bindTo($scope, 'user');
+
+  $scope.logout = function() {
+    FacebookAuth.logout();
+    $scope.user = null;
+    $state.go('login', {}, {reload: true});
+  };
+
 });
 
-app.config(function($stateProvider, $urlRouterProvider) {
+app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
   $stateProvider.state('login', {
     url: '/login',
     views: {
@@ -235,7 +250,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('profile', {
     url: '/profile',
     'views': {
-      profile: {
+      'profile': {
         templateUrl: 'templates/profile.html',
         controller: 'ProfileCtrl',
       },
@@ -246,6 +261,9 @@ app.config(function($stateProvider, $urlRouterProvider) {
   });
 
   $urlRouterProvider.otherwise('/login');
+
+  $ionicConfigProvider.tabs.position('top');
+  $ionicConfigProvider.navBar.alignTitle('center');
 });
 
 app.controller('AppCtrl', function($scope, $ionicPopover) {
