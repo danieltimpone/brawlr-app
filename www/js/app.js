@@ -51,14 +51,12 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
 
               // New User.  Fill in everything
               if (isNewUser) {
-                console.log('Creating new user!');
                 returnedAuthData.username = returnedAuthData.facebook.displayName;
                 fb.child('Users').child(returnedAuthData.facebook.id).set(returnedAuthData);
                 returnedAuthData.isNewUser = true;
               }
               // Existing User. Update shit
               else {
-                console.log('Logging in existing user');
                 userObject.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id + '/picture?width=300&height=300';
                 userObject.facebook = returnedAuthData.facebook;
                 userObject.expires = returnedAuthData.expires;
@@ -233,17 +231,19 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
   };
 
   $scope.singleCardView = function(card) {
-    console.log(JSON.stringify(card));
-    console.log("goin for it")
     $state.go('cardDetail', {'cardID': card.$id},  {});
   }
 });
 
 app.controller('CardCtrl', function($scope, $stateParams, $ionicHistory, Card) {
-  $scope.card = Card.get($stateParams.cardID);
+
+
+  Card.get($stateParams.cardID).$loaded().then(function(cardObject) {
+    $scope.singleCard = cardObject;
+  });
 
   $scope.myGoBack = function() {
-    console.log("GOIN BACK");
+    $scope.singleCard = null;
     $ionicHistory.goBack();
   };
 });
