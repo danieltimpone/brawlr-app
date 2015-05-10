@@ -1,0 +1,40 @@
+<ion-view title="BRAWLR"  animation="no-animation">
+  <ion-nav-buttons side="left">
+    <button class="button icon ion-person" ui-sref="profile"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+    <button class="button icon button-icon">
+      <img src="img/gloveIcon2.png"  height="32" width="32">
+    </button>
+  </ion-nav-buttons>
+  <ion-content>
+    
+    <!-- This is a single card hidin in the background -->
+    <div class="list card"  ng-show="detailedCard" ng-click="myGoBack()">
+        <div class="item text-center">
+            <h2>{{ detailedCard.username }}</h2>
+            <p>{{ detailedCard.description }}</p>
+        </div>
+        <div class="item item-image">
+            <img ng-src="{{detailedCard.picture}}">
+        </div>
+        <div class="item">
+            <strong>
+                Height
+            </strong>
+            <p class="pull-right">
+                {{detailedCard.height}}    
+            </p>        
+        </div>
+        <div class="item">
+            <strong>
+                Weight
+            </strong>
+            <p class="pull-right">
+              {{detailedCard.weight}}    
+            </p>        
+        </div>
+    </div>
+
+  </ion-content>
+</ion-view>

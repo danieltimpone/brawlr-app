@@ -1,13 +1,6 @@
 <ion-view title="Login">
-  <ion-content>
+  <ion-content  padding="true" class='has-header'>
     <!-- Buttons -->
     <button class="button button-full button-positive" ng-click="login()" ng-hide="user">Login with Facebook</button>
-
-
-    <!-- Logged-in user text -->
-    <div class="card text-center">
-      <div class="item item-text-wrap" ng-show="user" ng-bind="user.username"></div>
-      <img ng-src="{{user.picture}}" ng-show="user"/>
-    </div>
   </ion-content>
 </ion-view>

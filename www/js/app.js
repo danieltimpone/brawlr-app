@@ -8,6 +8,7 @@ var fb = new Firebase('https://brawlr.firebaseio.com');
 
 // do all the things ionic needs to get going
 app.run(function($ionicPlatform, $rootScope, $state) {
+
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -18,6 +19,9 @@ app.run(function($ionicPlatform, $rootScope, $state) {
       StatusBar.styleDefault();
     }
   });
+
+  // Log stateChangeErrors to console
+  $rootScope.$on("$stateChangeError", console.log.bind(console));
 
   // Prevent unAuthed users from viewing auth-required states
   $rootScope.$on('$stateChangeStart', function(event, toState) {
@@ -95,7 +99,7 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
   $scope.user = fb.getAuth();
   // Get authData.  Bind it to profile if it exists
   if ($scope.user) {
-    $state.go('cards', {}, {});
+    $state.go('cards', {}, {reload: true});
   }
 
   $scope.login = function() {
@@ -147,6 +151,7 @@ app.service('Match', function($q, $firebaseObject) {
 
 app.service('Card', function($firebaseArray, $firebaseObject) {
   var cards = $firebaseArray(fb.child('Users'));
+  var myAvailableMatches = null;
 
   function shuffle(myArray) {
       var counter = myArray.length, temp, index;
@@ -169,42 +174,69 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
   };
 
   this.get = function(userId) {
-    return $firebaseObject(fb.child('Users').child(userId));
-  }
-
-  this.availableMatches = function(userID) {
-    var result = [];
-
-    cards.$loaded()
-      .then(function(loadedCards) {
-        // Iterate through cards
-        for (var i = 0; i < loadedCards.length; i++) {
-          // Make sure you're not getting yourself
-          if (loadedCards[i].$id != userID) {
-            result.push(loadedCards[i]);
-          }
+    if (myAvailableMatches) {
+      for (var i = 0; i < myAvailableMatches.length; i++) {
+        if (myAvailableMatches[i].$id == userId) {
+          myAvailableMatches[i].ready = true
+          return myAvailableMatches[i]
         }
-        result = shuffle(result)
-      })
-      .catch(function(error) {
-        console.log('Error:', error);
-      });
-    return result;
+      }
+    }
+    // return $firebaseObject(fb.child('Users').child(userId));
   };
+
+
+  this.getByIndex = function(cardIndex) {
+    if (myAvailableMatches) {
+        return myAvailableMatches[cardIndex]
+      }
+    return null;
+  };
+
+  this.availableMatches = function(userID, reload) {
+
+    reload = reload || false;
+    var result = [];
+    if (!myAvailableMatches || reload) {
+      cards.$loaded()
+        .then(function(loadedCards) {
+          // Iterate through cards
+          for (var i = 0; i < loadedCards.length; i++) {
+            // Make sure you're not getting yourself
+            if (loadedCards[i].$id != userID) {
+              result.push(loadedCards[i]);
+            }
+          }
+          result = shuffle(result)
+        })
+        .catch(function(error) {
+          console.log('Error:', error);
+        });
+      myAvailableMatches = result;
+      return result;
+    }
+    else {
+      return myAvailableMatches
+    }
+
+  };
+
 
 });
 
 
 
-app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state) {
+app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state, $ionicHistory) {
   $scope.user = fb.getAuth();
   $scope.cards = Card.availableMatches($scope.user.facebook.id);
+  $scope.refresherEnabled = true;
 
   var ref = fb.child('Swipes').child($scope.user.facebook.id);
   var matchesRef = fb.child('Matches');
-
+  
   $scope.doRefresh = function() {
-    $scope.cards = Card.availableMatches($scope.user.facebook.id);
+    $scope.cards = Card.availableMatches($scope.user.facebook.id, true);
+    $scope.detailedCard = null;
     $scope.$broadcast('scroll.refreshComplete');
   }
 
@@ -228,27 +260,36 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
 
   $scope.cardDestroyed = function(index) {
     $scope.cards.splice(index, 1);
+    if ($scope.cards.length < 1) {
+        console.log("You ran out of cards!");
+        $scope.cards = Card.availableMatches($scope.user.facebook.id, true);  
+    }
   };
 
-  $scope.singleCardView = function(card) {
-    $state.go('cardDetail', {'cardID': card.$id},  {});
-  }
+  $scope.showDetails = function(cardIndex) {
+  // Disable sluggish animation
+  $ionicHistory.nextViewOptions({
+    disableAnimate: true,
+  });
+    $state.go('singleCard', {cardIndex: cardIndex}, {reload: false});
+  };
+
 });
 
-app.controller('CardCtrl', function($scope, $stateParams, $ionicHistory, Card) {
-
-
-  Card.get($stateParams.cardID).$loaded().then(function(cardObject) {
-    $scope.singleCard = cardObject;
-  });
+app.controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory, Card) {
+  
+  $scope.detailedCard = Card.getByIndex($stateParams.cardIndex)
 
   $scope.myGoBack = function() {
-    $scope.singleCard = null;
-    $ionicHistory.goBack();
+      // Disable sluggish animation
+      $ionicHistory.nextViewOptions({
+          disableAnimate: true,
+      });
+      $ionicHistory.goBack();
   };
 });
 
-app.controller('ProfileCtrl', function($scope, $firebaseObject, FacebookAuth) {
+app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
   $scope.user = fb.getAuth();
   var ref = fb.child('Users').child($scope.user.facebook.id);
   var syncedProfile = $firebaseObject(ref);
@@ -265,12 +306,8 @@ app.controller('ProfileCtrl', function($scope, $firebaseObject, FacebookAuth) {
 app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
   $stateProvider.state('login', {
     url: '/login',
-    views: {
-      'login': {
-        templateUrl: 'templates/login.html',
-        controller: 'LoginCtrl',
-      }
-    },
+    templateUrl: 'templates/login.html',
+    controller: 'LoginCtrl',
     data: {
       authRequired: false,
     },
@@ -278,31 +315,21 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
 
   $stateProvider.state('cards', {
     url: '/cards',
-    views: {
-      'cards': {
-        templateUrl: 'templates/cards.html',
-        controller: 'CardsCtrl',
-      },
-
-    },
+    templateUrl: 'templates/cards.html',
+    controller: 'CardsCtrl',
     data: {
       authRequired: true,
     },
   });
 
-  $stateProvider.state('cardDetail', {
-    url: '/card/:cardID',
-    views: {
-      'card': {
-        templateUrl: 'templates/card.html',
-        controller: 'CardCtrl',
-      },
-    },
+  $stateProvider.state('singleCard', {
+    url: 'singleCard/:cardIndex',
+    templateUrl: 'templates/cards.single.html',
+    controller: 'CardCtrl',
     data: {
       authRequired: true,
     },
   });
-
 
   $stateProvider.state('profile', {
     url: '/profile',
@@ -324,7 +351,7 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
 });
 
 app.controller('AppCtrl', function($scope, $ionicPopover, $state) {
-
+  $scope.user = fb.getAuth();
   $scope.headerClicked = function () {
     $state.go('cards', {}, {});
   };
