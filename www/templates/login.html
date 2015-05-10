@@ -1,5 +1,5 @@
 <ion-view title="Login">
-  <ion-content class="padding has-header">
+  <ion-content>
     <!-- Buttons -->
     <button class="button button-full button-positive" ng-click="login()" ng-hide="user">Login with Facebook</button>
 
@@ -9,7 +9,5 @@
       <div class="item item-text-wrap" ng-show="user" ng-bind="user.username"></div>
       <img ng-src="{{user.picture}}" ng-show="user"/>
     </div>
-
-    <button class="button button-full button-outline button-assertive" ng-click="logout()" ng-show="user" >Logout</button>
   </ion-content>
 </ion-view>

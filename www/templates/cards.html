@@ -1,5 +1,13 @@
-<ion-view title="Cards">
-  <ion-content class="padding has-header">
+<ion-view title="BRAWLR">
+  <ion-nav-buttons side="left">
+    <button class="button icon ion-person" ui-sref="profile"></button>
+  </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+    <button class="button icon button-icon">
+      <img src="img/gloveIcon2.png"  height="32" width="32">
+    </button>
+  </ion-nav-buttons>
+  <ion-content>
     <td-cards>
         <td-card id="td-card" ng-repeat="card in cards" on-destroy="cardDestroyed($index)" on-swipe-left="cardSwipedLeft($index)" on-swipe-right="cardSwipedRight($index)" on-partial-swipe="cardPartialSwipe(amt)" ng-click="singleCardView(card)">
 

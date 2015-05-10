@@ -1,5 +1,9 @@
-<ion-view title="Profile">
-  <ion-content class="padding has-header">
+<ion-view title="BRAWLR">  
+  <ion-nav-buttons side="left">
+    <button class="button icon ion-ios-people-outline" ui-sref="cards"></button>
+  </ion-nav-buttons>
+
+  <ion-content padding="true">
   <form  ng-submit="save_profile()"> 
     <div class="list">
         <div class="form-group">
@@ -33,6 +37,8 @@
           </label>
         </div>
       </div>
+        <button type="button" class="button button-full button-positive">Save</button>
+        <button type="button" class="button button-full button-dark" on-tap="logout()">Logout</button>
     </form>
   </ion-content>
 </ion-view>
