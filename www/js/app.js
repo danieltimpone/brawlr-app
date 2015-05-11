@@ -286,7 +286,8 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
       if (matched) {
         myIDasInt = parseInt($scope.user.facebook.id);
         theirIDasInt = parseInt($scope.swipedUser);
-        var matchId = min(myIDasInt, theirIDasInt).toString() + max(myIDasInt, theirIDasInt).toString();
+        var matchId = Math.min(myIDasInt, theirIDasInt).toString() + Math.max(myIDasInt, theirIDasInt).toString();
+        console.log("Creating match with ID: " + matchId);
         matchesRef.child(matchId).child('Messages').set({'default': 'He called you a bitch'});
       }
     });
