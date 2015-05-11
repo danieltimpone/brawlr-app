@@ -257,7 +257,7 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
 
 
-app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $state, $ionicHistory, FacebookAuth) {
+app.controller('CardsCtrl', function($scope, $firebaseObject, $state, $ionicHistory, $ionicPopup, Card, Match, FacebookAuth) {
   $scope.user = FacebookAuth.getAuthData();
   $scope.cards = Card.availableCards($scope.user.facebook.id);
   $scope.refresherEnabled = true;
@@ -289,9 +289,26 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
         var matchId = Math.min(myIDasInt, theirIDasInt).toString() + Math.max(myIDasInt, theirIDasInt).toString();
         console.log("Creating match with ID: " + matchId);
         matchesRef.child(matchId).child('Messages').set({'default': 'He called you a bitch'});
+        $scope.showMatchConfirm();
       }
     });
   };
+
+   // A confirm dialog
+   $scope.showMatchConfirm = function() {
+     var confirmPopup = $ionicPopup.confirm({
+       title: "You've got a match!",
+       template: 'You ready to talk some shit?'
+     });
+     confirmPopup.then(function(res) {
+       if(res) {
+         $state.go('matches', {reload: false});
+       } else {
+         console.log('You are not sure');
+       }
+     });
+   };
+
 
   $scope.cardDestroyed = function(index) {
     $scope.cards.splice(index, 1);
@@ -340,6 +357,22 @@ app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $
     }
 
   });
+
+  $scope.doRefresh = function() {
+    console.log("Loading Matches");
+    myMatches = Match.myMatchList(true);
+    myMatches.then(function(resolvedList) {
+      $scope.myMatches = resolvedList;
+      console.log("Matches have been loaded. Grabbing user data now.");
+
+      $scope.matchedUsers = [];
+      for (var i = 0; i < resolvedList.length; i++){
+        otherGuysID = resolvedList[i].$id.replace($scope.user.facebook.id, '');
+        $scope.matchedUsers.push($firebaseObject(fb.child('Users').child(otherGuysID)));
+      }
+      $scope.$broadcast('scroll.refreshComplete');
+    });
+  };
   
 });
 
