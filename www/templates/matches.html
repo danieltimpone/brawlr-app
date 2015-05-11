@@ -11,10 +11,10 @@
     <ion-list class="list">
       <ion-item ng-repeat="match in myMatches">
           <a class="item item-avatar" href="#">
-            <img src="{{match}}" class='avatar-frame'>
-            <h2>{{match}}</h2>
+            <img src="{{matchedUsers[$index].picture}}" class='avatar-frame'>
+            <h2>{{matchedUsers[$index].username}}</h2>
 
-            <p>"{{matchedUsers}}"</p>
+            <p>Last message goes here</p>
           </a>
       </ion-item>
     </ion-list>

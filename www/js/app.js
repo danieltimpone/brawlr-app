@@ -164,46 +164,19 @@ app.service('Match', function($q, $firebaseObject, $firebaseArray) {
       reload = reload || false;
 
       if (!myAvailableMatches || reload) {
-        console.log("Match service realoading data");
+        console.log("myMatchList reloading data");
         matches.$loaded().then(function(loadedMatches){
           myAvailableMatches = loadedMatches;
-          console.log("Match service data resolved");
+          console.log("myMatchList data resolved");
           resolve(loadedMatches);
         });
       }
       else {
-        console.log("Grabbin old matches");
+        console.log("myMatchList Grabbin old matches");
         resolve(myAvailableMatches);
       }
     });
   };
-
-  var myMatchedUsers = [];
-  var numProfilesLoaded = 0;
-  var matchesLength = 0;
-  this.matchedUsers = function(userID, reload) {
-    numProfilesLoaded = 0;
-    matchesLength = 0;
-
-    reload = reload || false;
-    if (!myAvailableMatches) {
-      return null;
-    }
-    if (myMatchedUsers.length > 0 && !reload) {
-      return myMatchedUsers;
-    }
-
-    matches.$loaded().then(function(loadedMatches) {
-      loadingProfilesList = [];
-      for (var i = 0; i < loadedMatches.length; i++) {
-        otherGuysID = loadedMatches[i].$id.replace(userID, '');
-        loadingProfilesList.push(otherGuysID);
-      } // for loop
-
-      myMatchedUsers = loadingProfilesList;
-      return loadingProfilesList;
-    }); // matches.loaded
-  }; // this.matchedUsers
 
 });
 
@@ -355,12 +328,16 @@ app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $
   myMatches = Match.myMatchList();
   myMatches.then(function(resolvedList) {
     $scope.myMatches = resolvedList;
-    console.log("Matches have been loaded");
-  });
+    console.log("Matches have been loaded. Grabbing user data now.");
 
-  console.log("Loading Matched Profiles");
-  matchedUsers = Match.matchedUsers($scope.user.facebook.id);
-  console.log(matchedUsers)
+    $scope.matchedUsers = [];
+    for (var i = 0; i < resolvedList.length; i++){
+      otherGuysID = resolvedList[i].$id.replace($scope.user.facebook.id, '');
+      $scope.matchedUsers.push($firebaseObject(fb.child('Users').child(otherGuysID)));
+    }
+
+  });
+  
 });
 
 app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
