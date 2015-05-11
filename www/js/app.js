@@ -70,7 +70,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
                 returnedAuthData.isNewUser = false;
               }
             });
-            authData = fb.getAuth()
+            authData = fb.getAuth();
             resolve(returnedAuthData);
           }, function(error) {
               console.error('ERROR in $authWithOAuthToken: ' + error);
@@ -111,7 +111,7 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
   $scope.user = FacebookAuth.getAuthData();
   // Get authData.  Bind it to profile if it exists
   if ($scope.user) {
-    console.log("In LoginCtrl w/ $scope.user.  Going to cards.")
+    console.log("In LoginCtrl w/ $scope.user.  Going to cards.");
     $state.go('cards', {}, {reload: true, notify: true});
   }
 
@@ -138,7 +138,9 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
 
 app.service('Match', function($q, $firebaseObject, $firebaseArray) {
   var swipes_ref = fb.child('Swipes');
+  var users_ref = fb.child('Users');
   var matches = $firebaseArray(fb.child('Matches'));
+
 
   this.isMatch = function(swipedUser, currentUser) {
 
@@ -157,31 +159,52 @@ app.service('Match', function($q, $firebaseObject, $firebaseArray) {
   };
 
   myAvailableMatches = null;
-
   this.myMatchList = function(reload) {
-    reload = reload || false;
-    var result = [];
-    matches = $firebaseArray(fb.child('Matches'));
-    if (!myAvailableMatches || reload) {
-      matches.$loaded()
-        .then(function(loadedMatches) {
-          for (var i = 0; i < loadedMatches.length; i++) {
-            // Make sure you're not getting yourself
-            result.push(loadedMatches[i]);
-          }
-          myAvailableMatches = result;
-          return myAvailableMatches;
-        })
-        .catch(function(error) {
-          console.log('Error:', error);
+    return $q(function(resolve, reject) {
+      reload = reload || false;
+
+      if (!myAvailableMatches || reload) {
+        console.log("Match service realoading data");
+        matches.$loaded().then(function(loadedMatches){
+          myAvailableMatches = loadedMatches;
+          console.log("Match service data resolved");
+          resolve(loadedMatches);
         });
+      }
+      else {
+        console.log("Grabbin old matches");
+        resolve(myAvailableMatches);
+      }
+    });
+  };
+
+  var myMatchedUsers = [];
+  var numProfilesLoaded = 0;
+  var matchesLength = 0;
+  this.matchedUsers = function(userID, reload) {
+    numProfilesLoaded = 0;
+    matchesLength = 0;
+
+    reload = reload || false;
+    if (!myAvailableMatches) {
+      return null;
     }
-    else {
-      console.log("Grabbin old matches");
-      return myAvailableMatches;
+    if (myMatchedUsers.length > 0 && !reload) {
+      return myMatchedUsers;
     }
 
-  };
+    matches.$loaded().then(function(loadedMatches) {
+      loadingProfilesList = [];
+      for (var i = 0; i < loadedMatches.length; i++) {
+        otherGuysID = loadedMatches[i].$id.replace(userID, '');
+        loadingProfilesList.push(otherGuysID);
+      } // for loop
+
+      myMatchedUsers = loadingProfilesList;
+      return loadingProfilesList;
+    }); // matches.loaded
+  }; // this.matchedUsers
+
 });
 
 app.service('Card', function($firebaseArray, $firebaseObject) {
@@ -206,14 +229,14 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
       }
 
       return myArray;
-  };
+  }
 
   this.get = function(userId) {
     if (myAvailableCards) {
       for (var i = 0; i < myAvailableCards.length; i++) {
         if (myAvailableCards[i].$id == userId) {
-          myAvailableCards[i].ready = true
-          return myAvailableCards[i]
+          myAvailableCards[i].ready = true;
+          return myAvailableCards[i];
         }
       }
     }
@@ -223,7 +246,7 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
   this.getByIndex = function(cardIndex) {
     if (myAvailableCards) {
-        return myAvailableCards[cardIndex]
+        return myAvailableCards[cardIndex];
       }
     return null;
   };
@@ -232,7 +255,6 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
     reload = reload || false;
     var result = [];
-    var cards = $firebaseArray(fb.child('Users'));
     if (!myAvailableCards || reload) {
       cards.$loaded()
         .then(function(loadedCards) {
@@ -243,7 +265,7 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
               result.push(loadedCards[i]);
             }
           }
-          result = shuffle(result)
+          result = shuffle(result);
         })
         .catch(function(error) {
           console.log('Error:', error);
@@ -252,7 +274,7 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
       return result;
     }
     else {
-      return myAvailableCards
+      return myAvailableCards;
     }
 
   };
@@ -274,7 +296,7 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
     $scope.cards = Card.availableCards($scope.user.facebook.id, true);
     $scope.detailedCard = null;
     $scope.$broadcast('scroll.refreshComplete');
-  }
+  };
 
   $scope.cardSwipedLeft = function(index) {
     $scope.swipedUser = $scope.cards[index].$id;
@@ -315,7 +337,7 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, Card, Match, $stat
 
 app.controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory, Card) {
   
-  $scope.detailedCard = Card.getByIndex($stateParams.cardIndex)
+  $scope.detailedCard = Card.getByIndex($stateParams.cardIndex);
 
   $scope.myGoBack = function() {
       // Disable sluggish animation
@@ -326,9 +348,20 @@ app.controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory,
   };
 });
 
-app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray) {
-  $scope.myMatches = $firebaseArray(fb.child('Matches'));
-})
+app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray, FacebookAuth, $q) {
+  $scope.user = FacebookAuth.getAuthData();
+  
+  console.log("Loading Matches");
+  myMatches = Match.myMatchList();
+  myMatches.then(function(resolvedList) {
+    $scope.myMatches = resolvedList;
+    console.log("Matches have been loaded");
+  });
+
+  console.log("Loading Matched Profiles");
+  matchedUsers = Match.matchedUsers($scope.user.facebook.id);
+  console.log(matchedUsers)
+});
 
 app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
   $scope.user = FacebookAuth.getAuthData();

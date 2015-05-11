@@ -9,11 +9,12 @@
   </ion-nav-buttons>
   <ion-content>
     <ion-list class="list">
-      <ion-item ng-repeat="m in myMatches">
+      <ion-item ng-repeat="match in myMatches">
           <a class="item item-avatar" href="#">
-            <img src="http://graph.facebook.com/10152962985952326/picture?width=300&height=300" class='avatar-frame'>
-            <h2>Venkman</h2>
-            <p>Back off, man. I'm a scientist.</p>
+            <img src="{{match}}" class='avatar-frame'>
+            <h2>{{match}}</h2>
+
+            <p>"{{matchedUsers}}"</p>
           </a>
       </ion-item>
     </ion-list>
