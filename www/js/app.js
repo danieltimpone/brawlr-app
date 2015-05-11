@@ -42,7 +42,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
   return {
     login: function() {
       return $q(function(resolve, reject) {
-        $cordovaOauth.facebook('917369228283594', ['email, public_profile']).then(function(result) {
+        $cordovaOauth.facebook('917369228283594', ['public_profile']).then(function(result) {
           fbAuth.$authWithOAuthToken('facebook', result.access_token).then(function(returnedAuthData) {
             returnedAuthData.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id + '/picture?width=300&height=300';
             var userInDatabase = $firebaseObject(fb.child('Users').child(returnedAuthData.facebook.id));
