@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <widget id="com.ionicframework.starter" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <name>ionic-demo</name>
+  <name>BRAWLR</name>
   <description>
-        An Ionic Framework and Cordova project.
+        Fight Fight Fight Fight Fight Fight Fight Fight
     </description>
-  <author email="hi@ionicframework" href="http://ionicframework.com/">
+  <author email="adamwestmantooth@gmail.com" href="http://brawlr.co">
       Ionic Framework Team
     </author>
   <content src="index.html"/>
