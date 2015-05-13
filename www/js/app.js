@@ -303,11 +303,24 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, $state, $ionicHist
     myMatch.then(function(matched) {
       ref.child($scope.swipedUser).set({'swipedRight' : 'True'});
       if (matched) {
+        var matchId = "";
         myIDasInt = parseInt($scope.user.facebook.id);
         theirIDasInt = parseInt($scope.swipedUser);
-        var matchId = Math.min(myIDasInt, theirIDasInt).toString() + Math.max(myIDasInt, theirIDasInt).toString();
-        console.log("Creating match with ID: " + matchId);
-        matchesRef.child(matchId).child('Messages').set({'default': 'He called you a bitch'});
+        if (myIDasInt < theirIDasInt) {
+          matchId = $scope.user.facebook.id + $scope.swipedUser;
+        }
+        else {
+          matchId = $scope.swipedUser + $scope.user.facebook.id;
+        }
+        
+        // Chceck if this match has somehow been made before
+        matchesRef.child(matchId).once('value', function(snapshot) {
+          var exists = (snapshot.val() !== null);
+          if(!exists) {
+              console.log("Creating new match with id: " + matchId);
+              matchesRef.child(matchId).child('Messages').set({'default': 'He called you a bitch'});
+          }
+        });
         $scope.showMatchConfirm();
       }
     });
