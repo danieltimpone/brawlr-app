@@ -13,15 +13,31 @@
     <ion-refresher pulling-text="Find more fights" on-refresh="doRefresh()" > </ion-refresher>
     <ion-list>
       <td-cards>
-          <td-card id="td-card" ng-repeat="card in cards" on-destroy="cardDestroyed($index)" on-swipe-left="cardSwipedLeft($index)" on-swipe-right="cardSwipedRight($index)" on-partial-swipe="cardPartialSwipe(amt)" ng-click="showDetails($index)">
+          <td-card id="td-card"
+                    ng-repeat="card in cards"
+                    on-destroy="cardDestroyed($index)"
+                    on-swipe-left="cardSwipedLeft($index)"
+                    on-swipe-right="cardSwipedRight($index)"
+                    on-partial-swipe="cardPartialSwipe(amt)"
+                    ng-click="showDetails($index)">
 
-              <div class="title text-center">
-                  {{ card.username }}
-              </div>
               <div class="image">
-                <div class="no-text overlayBox"><div class="noBox boxed">No</div></div>
+                <div class="no-text overlayBox">
+                  <div class="noBox boxed">
+                    No
+                  </div>
+                </div>
                 <img ng-src="{{ card.picture }}"></img>
-                <div class="yes-text overlayBox"><div class="yesBox boxed" id="centerMe">Yes</div></div>
+                <div class="yes-text overlayBox">
+                  <div class="yesBox boxed" id="centerMe">
+                    Fight
+                  </div>
+                  <br>
+                  <img class="boxed-fist" src="img/fist.png">
+                </div>
+                <div class='title'>
+                  {{ card.username }}
+                </div>
               </div>
           </td-card>
       </td-cards>

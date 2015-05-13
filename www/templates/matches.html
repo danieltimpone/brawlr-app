@@ -1,16 +1,11 @@
 <ion-view title="BRAWLR">
   <ion-nav-buttons side="left">
-    <button class="button icon ion-person" ui-sref="profile"></button>
+    <button class="button icon ion-ios-people-outline" ui-sref="cards"></button>
   </ion-nav-buttons>
-  <ion-nav-buttons side="right">
-    <button class="button icon button-icon" ui-sref="matches">
-      <img src="img/gloveIcon2.png"  height="32" width="32">
-    </button>
-  </ion-nav-buttons>
-  <ion-content>
+  <ion-content on-swipe-right="swipeRight()">
     <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher>
     <ion-list class="list">
-      <ion-item ng-repeat="match in myMatches">
+      <ion-item ng-repeat="match in myMatches" class='match-list-item shit'>
           <a class="item item-avatar" href="#">
             <img src="{{matchedUsers[$index].picture}}" class='avatar-frame'>
             <h2>{{matchedUsers[$index].username}}</h2>

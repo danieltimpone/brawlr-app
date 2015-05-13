@@ -1,9 +1,9 @@
 <ion-view title="BRAWLR">  
-  <ion-nav-buttons side="left">
+  <ion-nav-buttons side="right">
     <button class="button icon ion-ios-people-outline" ui-sref="cards"></button>
   </ion-nav-buttons>
 
-  <ion-content padding="true">
+  <ion-content  on-swipe-left="swipeLeft()" >
   <form  ng-submit="save_profile()"> 
     <div class="list">
         <div class="form-group">
