@@ -44,7 +44,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
       return $q(function(resolve, reject) {
         $cordovaOauth.facebook('917369228283594', ['public_profile']).then(function(result) {
           fbAuth.$authWithOAuthToken('facebook', result.access_token).then(function(returnedAuthData) {
-            returnedAuthData.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id + '/picture?width=300&height=300';
+            returnedAuthData.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id + '/picture?width=600&height=600';
             var userInDatabase = $firebaseObject(fb.child('Users').child(returnedAuthData.facebook.id));
 
             userInDatabase.$loaded().then(function(userObject) {
@@ -98,14 +98,13 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
   };
 });
 
-app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
+app.controller('LoginCtrl', function($scope, $firebaseObject, $state, $ionicScrollDelegate, FacebookAuth) {
   //  This function will be used to bind the user data to the scope
   function bindToProfile(authData) {
     var ref = fb.child('Users').child(authData.facebook.id);
     var syncedProfile = $firebaseObject(ref);
     syncedProfile.$bindTo($scope, 'user');
   }
-  console.log("Login Control");
 
   // Initialize non-logged in user
   $scope.user = FacebookAuth.getAuthData();
@@ -134,6 +133,26 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, FacebookAu
     });
   };
 
+  // Disable vertical scrolling for first card
+  $scope.showLeftArrow = false;
+  $scope.showRightArrow = true;
+  $scope.slideHasChanged = function(_index) {
+    if (_index === 0) {
+      $scope.showLeftArrow = false;
+      $scope.showRightArrow = true;
+      $ionicScrollDelegate.getScrollView().options.scrollingY = false;
+    }
+    if (_index == 1) {
+      $scope.showLeftArrow = true;
+      $scope.showRightArrow = true;
+      $ionicScrollDelegate.getScrollView().options.scrollingY = false;
+    }
+    if (_index == 2) {
+      $scope.showLeftArrow = true;
+      $scope.showRightArrow = false;
+      $ionicScrollDelegate.getScrollView().options.scrollingY = true;
+    }
+  };
 });
 
 app.service('Match', function($q, $firebaseObject, $firebaseArray) {
@@ -341,7 +360,7 @@ app.controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory,
   };
 });
 
-app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray, FacebookAuth, $q) {
+app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray, FacebookAuth, $q, $ionicGesture) {
   $scope.user = FacebookAuth.getAuthData();
   
   console.log("Loading Matches");
@@ -373,10 +392,14 @@ app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $
       $scope.$broadcast('scroll.refreshComplete');
     });
   };
-  
+
+  $scope.swipeRight = function() {
+      $state.go('cards', {}, {});
+  };
+
 });
 
-app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, FacebookAuth) {
+app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, $ionicViewSwitcher, FacebookAuth) {
   $scope.user = FacebookAuth.getAuthData();
   var ref = fb.child('Users').child($scope.user.facebook.id);
   var syncedProfile = $firebaseObject(ref);
@@ -387,6 +410,12 @@ app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, Facebook
     $state.go('login', {}, {reload: true, notify: true});
   };
 
+  $scope.swipeLeft = function() {
+    // Make sure the animation occurs in the correct direction
+    $ionicViewSwitcher.nextDirection('forward');
+    // Navigate to cards view
+    $state.go('cards', {}, {});
+  };
 });
 
 app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
