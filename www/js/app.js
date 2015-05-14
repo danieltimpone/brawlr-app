@@ -4,6 +4,7 @@
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
 var app = angular.module('starter', ['ionic', 'ionic.contrib.ui.tinderCards', 'firebase', 'ngCordovaOauth', 'ui.router']);
+var fburl = 'https://brawlr.firebaseio.com';
 var fb = new Firebase('https://brawlr.firebaseio.com');
 
 // do all the things ionic needs to get going
@@ -412,7 +413,27 @@ app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $
 
 });
 
-app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, $ionicViewSwitcher, FacebookAuth) {
+// This is a factory
+app.factory('ProfilePics', function($cordovaOauth, $firebaseAuth, $q, $firebaseObject, FacebookAuth) {
+  user = FacebookAuth.getAuthData();
+  var profileRef = fb.child('Users').child(user.facebook.id);
+  return {
+    getPic: function() {
+      return $q(function(resolve, reject) {
+        f_one = profileRef.child('pic_one');
+        f_one.once('value', function(snap) {
+          var payload = snap.val();
+          if (payload !== null) {
+            resolve(payload);
+          }
+        });  
+      });
+    },
+  };
+});
+
+app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, $ionicViewSwitcher, $rootScope, Firebase, FacebookAuth, ProfilePics) {
+  $scope.status = 'bullcrap';
   $scope.user = FacebookAuth.getAuthData();
   var ref = fb.child('Users').child($scope.user.facebook.id);
   var syncedProfile = $firebaseObject(ref);
@@ -429,6 +450,26 @@ app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, $ionicVi
     // Navigate to cards view
     $state.go('cards', {}, {});
   };
+  
+  angular.element(document.getElementById('upload_pic_one')).on('change',function(e){
+     var file=e.target.files[0];
+     angular.element(document.getElementById('upload_pic_one')).val('');
+     var fileReader=new FileReader();
+     fileReader.onload=function(event){
+        fb.child('Users').child($scope.user.facebook.id).child('pic_one').set(event.target.result);
+        // update_pic_one();
+        ProfilePics.getPicOne().then(function (data) {
+          document.getElementById("pic_one").src = data;
+        });
+     };
+     fileReader.readAsDataURL(file);
+     
+  });
+
+  // // update_pic_one();
+  // ProfilePics.getPic().then(function (data) {
+  //   document.getElementById("pic_one").src = data;
+  // });
 });
 
 app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
