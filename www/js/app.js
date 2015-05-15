@@ -198,7 +198,9 @@ app.service('Match', function($q, $firebaseObject, $firebaseArray) {
   this.isMatch = function(swipedUser, currentUser) {
 
     return $q(function(resolve, reject) {
-      var rightOnCurrent =  $firebaseObject(swipes_ref.child('facebook:'+swipedUser).child(currentUser).child('timestampForIndex'));
+      console.log(swipedUser)
+      console.log(currentUser)
+      var rightOnCurrent =  $firebaseObject(swipes_ref.child(swipedUser).child(currentUser).child('timestampForIndex'));
 
       rightOnCurrent.$loaded().then(function(current) {
         if (current.$value == 'True') {
