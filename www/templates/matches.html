@@ -5,11 +5,11 @@
   <ion-content on-swipe-right="swipeRight()">
     <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher>
     <ion-list class="list">
-      <ion-item ng-repeat="match in matches" class='match-list-item shit'>
+      <ion-item ng-repeat="match in matches" class='match-list-item shit' ng-click="showMessages($index)">
           <a class="item item-avatar" href="#">
-            <img ng-src="{{matchedUsers[$index].picture}}" class='avatar-frame'>
-            <h2 ng-click="showDetails($index)">{{matchedUsers[$index].username}}</h2>
-            <p ng-click="showDetails($index)">{{messageList[$index][messageList[$index].length-1].$value}}</p>
+            <img ng-src="{{matchedUsers[$index].picture}}" class='avatar-frame' ng-click="showDetails($index);$event.stopPropagation()">
+            <h2>{{matchedUsers[$index].username}}</h2>
+            <p>{{messageList[$index][messageList[$index].length-1].$value}}</p>
           </a>
       </ion-item>
     </ion-list>

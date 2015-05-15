@@ -99,9 +99,18 @@ angular.module('brawlr', [
   });
 
   $stateProvider.state('singleMatch', {
-    url: 'singleCard/:matchIndex',
+    url: 'match/:matchIndex',
     templateUrl: 'templates/matches.single.html',
     controller: 'MatchCtrl',
+    data: {
+      authRequired: true,
+    },
+  });
+
+  $stateProvider.state('singleMatchCard', {
+    url: 'match/:cardIndex',
+    templateUrl: 'templates/cards.single.html',
+    controller: 'SingleMatchCardCtrl',
     data: {
       authRequired: true,
     },

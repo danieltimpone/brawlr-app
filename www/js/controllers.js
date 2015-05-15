@@ -212,13 +212,23 @@ angular.module('brawlr.controllers', [])
   $scope.swipeRight = function() {
       $state.go('cards', {}, {});
   };
-  $scope.showDetails = function(matchIndex) {
+
+  $scope.showMessages = function(matchIndex) {
     // Disable sluggish animation
     $ionicHistory.nextViewOptions({
       disableAnimate: true,
     });
       $state.go('singleMatch', {matchIndex: matchIndex}, {reload: false});
   };
+
+  $scope.showDetails = function(cardIndex) {
+    // Disable sluggish animation
+    $ionicHistory.nextViewOptions({
+      disableAnimate: true,
+    });
+    $state.go('singleMatchCard', {cardIndex: cardIndex}, {reload: false});
+  };
+
 
 })
 
@@ -266,6 +276,20 @@ angular.module('brawlr.controllers', [])
         // messageArray.$indexFor(id); // returns location in the array
         // clear message text
       }); 
+  };
+
+})
+
+.controller('SingleMatchCardCtrl', function($scope, $stateParams, $state, $ionicHistory, Match) {
+  
+  $scope.detailedCard = Match.getUserByMatchIndex($stateParams.cardIndex);
+
+  $scope.myGoBack = function() {
+      // Disable sluggish animation
+      $ionicHistory.nextViewOptions({
+          disableAnimate: true,
+      });
+      $ionicHistory.goBack();
   };
 
 });
