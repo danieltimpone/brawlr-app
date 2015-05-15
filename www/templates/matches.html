@@ -7,10 +7,9 @@
     <ion-list class="list">
       <ion-item ng-repeat="match in myMatches" class='match-list-item shit'>
           <a class="item item-avatar" href="#">
-            <img src="{{matchedUsers[$index].picture}}" class='avatar-frame'>
-            <h2>{{matchedUsers[$index].username}}</h2>
-
-            <p>Last message goes here</p>
+            <img ng-src="{{matchedUsers[$index].picture}}" class='avatar-frame'>
+            <h2 ng-click="showDetails($index)">{{matchedUsers[$index].username}}</h2>
+            <p ng-click="showDetails($index)">{{messageList[$index][messageList[$index].length-1].$value}}</p>
           </a>
       </ion-item>
     </ion-list>

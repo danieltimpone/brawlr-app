@@ -1,0 +1,25 @@
+<ion-view title="BRAWLR">
+  <ion-nav-buttons side="left">
+    <button class="button icon button-icon" ui-sref="matches">
+      <img src="img/gloveIcon2.png"  height="32" width="32">
+    </button>
+  </ion-nav-buttons>
+  <ion-content on-swipe-right="swipeRight()">
+    <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher>
+    <ion-list class="list card">
+      <ion-item ng-repeat="m in messageArray" class='match-list-item shit'>
+          <a class="item item-avatar item-text-wrap" href="#">
+            <img ng-if="m.userID == otherGuy.$id" ng-src="{{otherGuy.picture}}" class='avatar-frame'>
+            <img ng-if="m.userID != otherGuy.$id" ng-src="{{user.picture}}" class='avatar-frame'>
+            <h2>{{}}</h2>
+            <p>{{m.text}}</p>
+          </a>
+      </ion-item>
+    </ion-list>
+    <br>
+    <ion-scroll delegate-handle="small">
+      <textarea placeholder="Talk some shit" id="messageBox" rows="2" class="form-control" ng-model="newMessageText"></textarea>
+      <button type="submit" class="button button-full button-positive" ng-click="sendMessage(newMessageText); newMessageText=null;" id='sendMessageButton'>Send</button>
+    </ion-scroll>
+  </ion-content>
+</ion-view>

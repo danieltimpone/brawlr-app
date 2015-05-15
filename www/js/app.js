@@ -45,8 +45,9 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
       return $q(function(resolve, reject) {
         $cordovaOauth.facebook('917369228283594', ['public_profile']).then(function(result) {
           fbAuth.$authWithOAuthToken('facebook', result.access_token).then(function(returnedAuthData) {
-            returnedAuthData.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id + '/picture?width=600&height=600';
-            var userInDatabase = $firebaseObject(fb.child('Users').child(returnedAuthData.facebook.id));
+            console.log('fuckin with picture 1')
+            returnedAuthData.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id.replace('facebook:', '') + '/picture?width=600&height=600';
+            var userInDatabase = $firebaseObject(fb.child('Users').child('facebook:' + returnedAuthData.facebook.id));
 
             userInDatabase.$loaded().then(function(userObject) {
               // How the fuck do you figure out if the user exists already?!?!?
@@ -63,7 +64,8 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
               }
               // Existing User. Update shit
               else {
-                userObject.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id + '/picture?width=300&height=300';
+                console.log('fuckin with picture 2')
+                userObject.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id.replace('facebook:', '') + '/picture?width=600&height=600';
                 userObject.facebook = returnedAuthData.facebook;
                 userObject.expires = returnedAuthData.expires;
                 userObject.token = returnedAuthData.token;
@@ -72,6 +74,7 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
               }
             });
             authData = fb.getAuth();
+            authData.facebook.id = 'facebook:' + authData.facebook.id;
             resolve(returnedAuthData);
           }, function(error) {
               console.error('ERROR in $authWithOAuthToken: ' + error);
@@ -89,11 +92,19 @@ app.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebase
     },
     getAuthData: function() {
       if (authData) {
+        if (authData.facebook.id.indexOf('facebook:') == - 1) {
+          authData.facebook.id = 'facebook:' + authData.facebook.id;
+        }
         return authData;
       }
       else {
         authData = fb.getAuth();
-        return authData;
+        if (authData) {
+          if (authData.facebook.id.indexOf('facebook:') == - 1) {
+            authData.facebook.id = 'facebook:' + authData.facebook.id;
+          }
+          return authData;
+        }
       }
     }
   };
@@ -156,16 +167,38 @@ app.controller('LoginCtrl', function($scope, $firebaseObject, $state, $ionicScro
   };
 });
 
+app.service('Message', function($q, $firebaseObject, $firebaseArray) {
+  // var matches = $firebaseArray(fb.child('Matches'));
+
+  this.getMessageArray = function(currentUser, otherGuy) {
+
+    return $q(function(resolve, reject) {
+        console.log(currentUser);
+        console.log(otherGuy);
+        if (currentUser < otherGuy) {
+          matchId = currentUser + otherGuy;
+        }
+        else {
+          matchId = otherGuy + currentUser;
+        }
+        console.log("Grabbing match id: " + matchId);
+        theseMessages = $firebaseArray(fb.child('Matches').child(matchId).child('Messages').orderByChild("epochTimeForIndex").limitToLast(25));
+        resolve(theseMessages);
+      });
+    };
+});
+
 app.service('Match', function($q, $firebaseObject, $firebaseArray) {
   var swipes_ref = fb.child('Swipes');
   var users_ref = fb.child('Users');
+  var matches_ref = fb.child('Matches');
   var matches = $firebaseArray(fb.child('Matches'));
 
 
   this.isMatch = function(swipedUser, currentUser) {
 
     return $q(function(resolve, reject) {
-      var rightOnCurrent =  $firebaseObject(swipes_ref.child(swipedUser).child(currentUser).child('swipedRight'));
+      var rightOnCurrent =  $firebaseObject(swipes_ref.child(swipedUser).child(currentUser).child('timestampForIndex'));
 
       rightOnCurrent.$loaded().then(function(current) {
         if (current.$value == 'True') {
@@ -178,29 +211,77 @@ app.service('Match', function($q, $firebaseObject, $firebaseArray) {
     });
   };
 
-  myAvailableMatches = null;
+  _myMatches = null;
   this.myMatchList = function(reload) {
     return $q(function(resolve, reject) {
       reload = reload || false;
 
-      if (!myAvailableMatches || reload) {
+      if (!_myMatches || reload) {
         console.log("myMatchList reloading data");
         matches.$loaded().then(function(loadedMatches){
-          myAvailableMatches = loadedMatches;
-          console.log("myMatchList data resolved");
+          _myMatches = loadedMatches;
           resolve(loadedMatches);
         });
       }
       else {
         console.log("myMatchList Grabbin old matches");
-        resolve(myAvailableMatches);
+        resolve(_myMatches);
       }
     });
   };
 
+  _matchedUsers = [];
+  this.matchedUsers = function(currentUser, reload) {
+    return $q(function(resolve, reject) {
+      reload = reload || false;
+
+      // Make sure matches are loaded, then...
+      _myMatches.$loaded().then(function(loadedMatches){
+        // Go through each match, out otherGuysID, and get his user object
+        for (var i = 0; i < loadedMatches.length; i++){
+          otherGuysID = loadedMatches[i].$id.replace(currentUser, '');
+          _matchedUsers.push($firebaseObject(users_ref.child(otherGuysID)));
+        }
+        console.log('returnin those matched users');
+        resolve(_matchedUsers); 
+      });
+    });
+  };
+  this.getUserByMatchIndex = function(messageIndex) {
+    if (_matchedUsers) {
+        return _matchedUsers[messageIndex];
+      }
+    return null;
+  };
+
+
+  _messageList = [];
+  this.messageList = function(reload) {
+    return $q(function(resolve, reject) {
+      reload = reload || false;
+
+      // Make sure matches are loaded, then...
+      _myMatches.$loaded().then(function(loadedMatches){
+        for (var i = 0; i < loadedMatches.length; i++){
+          // Go through each match and grab its messages as an array
+          _messageList.push($firebaseArray(matches_ref.child(loadedMatches[i].$id).child('Messages')));
+        }
+        resolve(_messageList); 
+      });
+    });
+  };
+
+  this.getMessageByIndex = function(messageIndex) {
+    if (_messageList) {
+        return _messageList[messageIndex];
+      }
+    return null;
+  };
+
+
 });
 
-app.service('Card', function($firebaseArray, $firebaseObject) {
+app.service('Card', function($q, $firebaseArray, $firebaseObject, FacebookAuth) {
   var cards = $firebaseArray(fb.child('Users'));
   var myAvailableCards = null;
 
@@ -272,7 +353,22 @@ app.service('Card', function($firebaseArray, $firebaseObject) {
 
   };
 
-
+  _currentProfile = null;
+  this.getCurrentUsersProfile = function(userID) {
+    return $q(function(resolve, reject) {
+      if (_currentProfile !== null) {
+        resolve(_currentProfile);
+      }
+      userAuthObj = FacebookAuth.getAuthData();
+      userObj = $firebaseObject(fb.child('Users').child(userAuthObj.facebook.id));
+      userObj.$loaded()
+        .then(function(loadedProfile) {
+          _currentProfile = loadedProfile;
+          console.log('returnin current profile');
+          resolve(_currentProfile);
+      });
+    });
+  };
 });
 
 
@@ -305,9 +401,7 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, $state, $ionicHist
       ref.child($scope.swipedUser).set({'swipedRight' : 'True'});
       if (matched) {
         var matchId = "";
-        myIDasInt = parseInt($scope.user.facebook.id);
-        theirIDasInt = parseInt($scope.swipedUser);
-        if (myIDasInt < theirIDasInt) {
+        if ($scope.user.facebook.id < $scope.swipedUser) {
           matchId = $scope.user.facebook.id + $scope.swipedUser;
         }
         else {
@@ -337,7 +431,7 @@ app.controller('CardsCtrl', function($scope, $firebaseObject, $state, $ionicHist
        if(res) {
          $state.go('matches', {reload: false});
        } else {
-         console.log('You are not sure');
+         console.log('You are not ready to talk some shit');
        }
      });
    };
@@ -372,48 +466,101 @@ app.controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory,
       });
       $ionicHistory.goBack();
   };
+
 });
 
-app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray, FacebookAuth, $q, $ionicGesture) {
+app.controller('MatchesCtrl', function($scope, $firebaseObject, Match, $state, $ionicHistory, $firebaseArray, FacebookAuth, $q, $ionicGesture, Message) {
   $scope.user = FacebookAuth.getAuthData();
-  
-  console.log("Loading Matches");
-  myMatches = Match.myMatchList();
-  myMatches.then(function(resolvedList) {
-    $scope.myMatches = resolvedList;
-    console.log("Matches have been loaded. Grabbing user data now.");
-
-    $scope.matchedUsers = [];
-    for (var i = 0; i < resolvedList.length; i++){
-      otherGuysID = resolvedList[i].$id.replace($scope.user.facebook.id, '');
-      $scope.matchedUsers.push($firebaseObject(fb.child('Users').child(otherGuysID)));
-    }
-
-  });
 
   $scope.doRefresh = function() {
-    console.log("Loading Matches");
-    myMatches = Match.myMatchList(true);
+    myMatches = Match.myMatchList();
     myMatches.then(function(resolvedList) {
       $scope.myMatches = resolvedList;
-      console.log("Matches have been loaded. Grabbing user data now.");
+      console.log("myMatches has been loaded. Grabbing matchedUsers now.");
+      matchedUsers = Match.matchedUsers($scope.user.facebook.id);
+      matchedUsers.then(function(resolvedUsers) {
+        $scope.matchedUsers = resolvedUsers;
+        console.log("matchedUsers has been loaded. Grabbing messageList now.");
+        messageList = Match.messageList();
+        messageList.then(function(resolvedMessageList) {
+          $scope.messageList = resolvedMessageList;
+          console.log("messageList confirmed.");
+        });
 
-      $scope.matchedUsers = [];
-      for (var i = 0; i < resolvedList.length; i++){
-        otherGuysID = resolvedList[i].$id.replace($scope.user.facebook.id, '');
-        $scope.matchedUsers.push($firebaseObject(fb.child('Users').child(otherGuysID)));
-      }
+      });
       $scope.$broadcast('scroll.refreshComplete');
     });
   };
 
+  $scope.doRefresh();
+
   $scope.swipeRight = function() {
       $state.go('cards', {}, {});
+  };
+  $scope.showDetails = function(matchIndex) {
+    // Disable sluggish animation
+    $ionicHistory.nextViewOptions({
+      disableAnimate: true,
+    });
+      $state.go('singleMatch', {matchIndex: matchIndex}, {reload: false});
   };
 
 });
 
-// This is a factory
+app.controller('MatchCtrl', function($scope, $stateParams, $state, $ionicHistory, $ionicScrollDelegate, FacebookAuth, Match, Card) {
+  $scope.textModel = "";
+  user = Card.getCurrentUsersProfile();
+  user.then(function(loadedUserProfile) {
+    $scope.user = loadedUserProfile;
+  });
+  $scope.messageArray = Match.getMessageByIndex($stateParams.matchIndex);
+  $scope.messageArray.$watch(function(event) {
+      $ionicScrollDelegate.$getByHandle('small').scrollTop();
+  });
+  $scope.otherGuy = Match.getUserByMatchIndex($stateParams.matchIndex);
+  
+  setTimeout(function(){ $ionicScrollDelegate.scrollBottom(true); }, 1000);
+  $scope.myGoBack = function() {
+      // Disable sluggish animation
+      $ionicHistory.nextViewOptions({
+          disableAnimate: true,
+      });
+      $ionicHistory.goBack();
+  };
+
+  $scope.swipeRight = function() {
+      $ionicHistory.goBack();
+  };
+
+  $scope.sendMessage = function(newMessageText) {
+    if (newMessageText === '' || newMessageText === null || newMessageText === undefined) {
+      return null;
+    }
+    var userID = $scope.user.facebook.id;
+
+    var d = new Date();
+    newMessageTextObject = {
+      'time': d,
+      'timestampForIndex':  Firebase.ServerValue.TIMESTAMP,
+      'text': newMessageText,
+      'userID': userID
+    };
+    console.log("Adding message: ");
+    console.log(JSON.stringify(newMessageTextObject));
+    $scope.newMessageText = null;
+    $scope.messageArray.$add(newMessageTextObject).then(function(ref) {
+        var id = ref.key();
+        console.log("added message with id " + id);
+        console.log("Message Text: " + newMessageText);
+        // messageArray.$indexFor(id); // returns location in the array
+        // clear message text
+        $scope.newMessageText = "";
+      }); 
+  };
+
+});
+
+// This is a factory.  It doesn't do shit right now.
 app.factory('ProfilePics', function($cordovaOauth, $firebaseAuth, $q, $firebaseObject, FacebookAuth) {
   user = FacebookAuth.getAuthData();
   var profileRef = fb.child('Users').child(user.facebook.id);
@@ -450,21 +597,22 @@ app.controller('ProfileCtrl', function($scope, $firebaseObject, $state, $ionicVi
     // Navigate to cards view
     $state.go('cards', {}, {});
   };
-  
-  angular.element(document.getElementById('upload_pic_one')).on('change',function(e){
-     var file=e.target.files[0];
-     angular.element(document.getElementById('upload_pic_one')).val('');
-     var fileReader=new FileReader();
-     fileReader.onload=function(event){
-        fb.child('Users').child($scope.user.facebook.id).child('pic_one').set(event.target.result);
-        // update_pic_one();
-        ProfilePics.getPicOne().then(function (data) {
-          document.getElementById("pic_one").src = data;
-        });
-     };
-     fileReader.readAsDataURL(file);
+
+  // This is the code snippet for uploading a new profile pic  
+  // angular.element(document.getElementById('upload_pic_one')).on('change',function(e){
+  //    var file=e.target.files[0];
+  //    angular.element(document.getElementById('upload_pic_one')).val('');
+  //    var fileReader=new FileReader();
+  //    fileReader.onload=function(event){
+  //       fb.child('Users').child($scope.user.facebook.id).child('pic_one').set(event.target.result);
+  //       // update_pic_one();
+  //       ProfilePics.getPicOne().then(function (data) {
+  //         document.getElementById("pic_one").src = data;
+  //       });
+  //    };
+  //    fileReader.readAsDataURL(file);
      
-  });
+  // });
 
   // // update_pic_one();
   // ProfilePics.getPic().then(function (data) {
@@ -513,6 +661,15 @@ app.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
     url: '/matches',
     templateUrl: 'templates/matches.html',
     controller: 'MatchesCtrl',
+    data: {
+      authRequired: true,
+    },
+  });
+
+  $stateProvider.state('singleMatch', {
+    url: 'singleCard/:matchIndex',
+    templateUrl: 'templates/matches.single.html',
+    controller: 'MatchCtrl',
     data: {
       authRequired: true,
     },
