@@ -5,13 +5,16 @@
     </button>
   </ion-nav-buttons>
   <ion-content on-swipe-right="swipeRight()">
-    <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher>
+    <!-- <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher> -->
     <ion-list class="list card">
       <ion-item ng-repeat="m in messageArray" class='match-list-item shit'>
           <a class="item item-avatar item-text-wrap" href="#">
             <img ng-if="m.userID == otherGuy.$id" ng-src="{{otherGuy.picture}}" class='avatar-frame'>
-            <img ng-if="m.userID != otherGuy.$id" ng-src="{{user.picture}}" class='avatar-frame'>
-            <h2>{{}}</h2>
+            <img ng-if="m.userID == 'BRAWLRADMIN'" ng-src="img/fist.png" class='avatar-frame'>
+            <img ng-if="m.userID == userProfile.$id" ng-src="{{userProfile.picture}}" class='avatar-frame'>
+            <h2 ng-if="m.userID == otherGuy.$id">{{ otherGuy.username }}</h2>
+            <h2 ng-if="m.userID == userProfile.$id">{{ userProfile.username }}</h2>
+            <h2 ng-if="m.userID == 'BRAWLRADMIN'">BRAWLR INSTIGATOR</h2>
             <p>{{m.text}}</p>
           </a>
       </ion-item>
