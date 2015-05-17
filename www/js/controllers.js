@@ -168,7 +168,7 @@ angular.module('brawlr.controllers', [])
      });
      confirmPopup.then(function(res) {
        if(res) {
-         $state.go('matches', {reload: true});
+         $state.go('matches', {forceReload: "True"}, {reload: true});
        } else {
          console.log('You are not ready to talk some shit');
        }
