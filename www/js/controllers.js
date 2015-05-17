@@ -1,18 +1,11 @@
 angular.module('brawlr.controllers', [])
 
  // AppCtrl is the parent to all other Controllers (see: index.html)
- // All other controllers can access AppCtrl's scope variables by using:
- //    $scope.$parent.<varname> 
- // We use AppCtrl to hold the current user's auth info and profile
-.controller('AppCtrl', function($scope, $state, FacebookAuth) {
-
-  $scope.user = FacebookAuth.getAuthData();
-  
-  // Get profile from firebase.  Once loaded, stick it in scope.
-  loadingUserProfile = FacebookAuth.getProfile();
-
-  loadingUserProfile.then(function(loadedProfile){
-    $scope.userProfile = loadedProfile;
+ // We use app control to set the root variables for the user's id/profile
+.controller('AppCtrl', function($scope, $rootScope, $state, $firebaseObject, FacebookAuth) {
+  loadingProfile = $firebaseObject(fb.child('Cards').child(window.localStorage.userKey));
+  loadingProfile.$bindTo($scope, "userProfile").then(function() {
+    console.log("AppCtrl has binded userProfile to $scope.userProfile"); // { foo: "bar" }
   });
 
   $scope.headerClicked = function () {
@@ -21,12 +14,12 @@ angular.module('brawlr.controllers', [])
 })
 
 
-.controller('LoginCtrl', function($scope, $firebaseObject, $state, $ionicScrollDelegate, FacebookAuth) {
+.controller('LoginCtrl', function($scope, $rootScope, $firebaseObject, $state, $ionicScrollDelegate, FacebookAuth) {
 
-  // Get user from AppCtrl.  Check index.html to see how AppCtrl is the parent of all.
-  $scope.user = $scope.$parent.user;
-  // If user is already logged in, send them to cards
+  // Get user from rootScope
+  $scope.user = $rootScope.userData;
   if ($scope.user) {
+    // If user is already logged in, send them to cards
     $state.go('cards', {}, {reload: true, notify: true});
   }
 
@@ -34,11 +27,15 @@ angular.module('brawlr.controllers', [])
   $scope.login = function() {
     var authPromise = FacebookAuth.login();
     authPromise.then(function(authData) {
+      console.log('login returned:');
+      console.log(JSON.stringify(authData));
       if (authData) {
         if (authData.isNewUser) { 
+          console.log("User logged in.  Going to: profile");
           $state.go('profile', {}, {reload: true});
         }
         else {
+          console.log("User logged in.  Going to: cards");
           $state.go('cards', {}, {reload: true});
         }
       }
@@ -72,8 +69,8 @@ angular.module('brawlr.controllers', [])
 
 // Profile control just kinda provides the buttons.
 //  AppCtrl already has all the scope variables we need (userProfile)
-.controller('ProfileCtrl', function($scope, $firebaseObject, $state, $ionicViewSwitcher, $rootScope, Firebase, FacebookAuth) {
-  // All the data binding in this view is handled in AppCtrl
+.controller('ProfileCtrl', function($scope, $rootScope, $firebaseObject, $state, $ionicViewSwitcher, Firebase, FacebookAuth) {
+  
 
   $scope.logout = function() {
     FacebookAuth.logout();
@@ -88,11 +85,15 @@ angular.module('brawlr.controllers', [])
 
 //  CardsCtrl won't load until Card Service is finished (This is requirement defined in the $stateProvider "resolve" in app.js)
 //  Once all that is loaded, CardsCtrl is pretty boring
-.controller('CardsCtrl', function($scope, $firebaseObject, $state, $ionicHistory, $ionicPopup, Card, Match) {
+.controller('CardsCtrl', function($scope, $rootScope, $firebaseObject, $state, $ionicHistory, $ionicPopup, Card, Match) {
   $scope.cards = Card.getCards();
+  $scope.user = $rootScope.userData;
+  userKey = window.localStorage.userKey;
+
+  var ref = fb.child('Swipes').child(window.localStorage.userKey);
   
-  var ref = fb.child('Swipes').child($scope.user.facebook.id);
   var matchesRef = fb.child('Matches');
+  var usersMatchesRef = fb.child('Users').child(userKey).child('Matches');
   
   $scope.doRefresh = function() {
     cardsLoading = Card.reloadCards();
@@ -105,7 +106,6 @@ angular.module('brawlr.controllers', [])
   $scope.cardSwipedLeft = function(index) {
     $scope.swipedUser = $scope.cards[index].$id;
     ref.child($scope.swipedUser).set({'swipedRight' : 'False'});
-    
   };
 
   $scope.cardSwipedRight = function(index) {
@@ -115,11 +115,11 @@ angular.module('brawlr.controllers', [])
       ref.child($scope.swipedUser).set({'swipedRight' : 'True'});
       if (matched) {
         var matchId = "";
-        if ($scope.user.facebook.id < $scope.swipedUser) {
-          matchId = $scope.user.facebook.id + $scope.swipedUser;
+        if (userKey < $scope.swipedUser) {
+          matchId = userKey + $scope.swipedUser;
         }
         else {
-          matchId = $scope.swipedUser + $scope.user.facebook.id;
+          matchId = $scope.swipedUser + userKey;
         }
         
         // Chceck if this match has somehow been made before
@@ -136,6 +136,9 @@ angular.module('brawlr.controllers', [])
                 }]
               };
               matchesRef.child(matchId).set(newMatchObj);
+              usersMatchesRef.child(matchId).set('True');
+              otherGuyMatchesRef = fb.child('Users').child($scope.swipedUser).child('Matches');
+              otherGuyMatchesRef.child(matchId).set('True');
           }
         });
         $scope.showMatchConfirm();
@@ -163,7 +166,7 @@ angular.module('brawlr.controllers', [])
     $scope.cards.splice(index, 1);
     if ($scope.cards.length < 1) {
         console.log("You ran out of cards!");
-        $scope.cards = Card.availableCards($scope.user.facebook.id, true);  
+        $scope.cards = $scope.doRefresh();
     }
   };
 
@@ -192,8 +195,8 @@ angular.module('brawlr.controllers', [])
 })
 
 // This covers the main match view
-.controller('MatchesCtrl', function($scope, $firebaseObject, $state, $ionicHistory, Match) {
-  $scope.user = $scope.$parent.user;
+.controller('MatchesCtrl', function($scope, $rootScope, $firebaseObject, $state, $ionicHistory, Match) {
+  $scope.user = $rootScope.userData;
   $scope.matches = Match.getMatches();
   $scope.matchedUsers = Match.getMatchedUsers();
   $scope.messageList = Match.getMessageList();
@@ -260,7 +263,7 @@ angular.module('brawlr.controllers', [])
     if (newMessageText === '' || newMessageText === null || newMessageText === undefined) {
       return null;
     }
-    var userID = $scope.$parent.user.facebook.id;
+    var userID = window.localStorage.userKey;
 
     var d = new Date();
     newMessageTextObject = {

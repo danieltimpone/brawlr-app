@@ -4,6 +4,7 @@
 // 'brawlr' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
 var fb = new Firebase('https://brawlr.firebaseio.com');
+
 angular.module('brawlr', [
   'ionic',
   'ionic.contrib.ui.tinderCards',
@@ -16,8 +17,8 @@ angular.module('brawlr', [
 ])
 
 // do all the things ionic needs to get going
-.run(function($ionicPlatform, $rootScope, $state) {
-
+.run(function($ionicPlatform, $rootScope, $state, $ionicPopup) {
+  
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -27,7 +28,33 @@ angular.module('brawlr', [
     if (window.StatusBar) {
       StatusBar.styleDefault();
     }
+    if(window.plugins && window.plugins.AdMob) {
+        var admob_key = ionic.Platform.isAndroid()  ? "ca-app-pub-1140638668387998/1374976269" : "IOS_PUBLISHER_KEY";
+
+        var admob = window.plugins.AdMob;
+
+        admob.createBannerView( 
+            {
+                'publisherId': admob_key,
+                'adSize': admob.AD_SIZE.BANNER,
+                'bannerAtTop': false
+            }, 
+            function() {
+                admob.requestAd(
+                    { 'isTesting': true }, 
+                    function() {
+                        console.log('Showing ad');
+                        admob.showAd(true);
+                    }, 
+                    function() { console.log('failed to request ad'); }
+                );
+            }, 
+            function() { console.log('failed to create banner view'); }
+        );
+    }
   });
+  $rootScope.userData = fb.getAuth();
+  $rootScope.userID = window.localStorage.userKey;
 
   // Log stateChangeErrors to console. I don't know if this works.
   $rootScope.$on("$stateChangeError", console.log.bind(console));
@@ -35,6 +62,7 @@ angular.module('brawlr', [
   // Prevent unAuthed users from viewing auth-required states
   $rootScope.$on('$stateChangeStart', function(event, toState) {
     if (toState.data.authRequired && !fb.getAuth()) {
+        console.log("Unauthed user tried to go somewhere bad");
         event.preventDefault();
         $state.go('login', {}, {reload: true});
     }
@@ -58,7 +86,7 @@ angular.module('brawlr', [
     resolve:{
       'MyCardPromise':function(Card){
         return Card.promise;
-      }
+      },
     },
     controller: 'CardsCtrl',
     data: {

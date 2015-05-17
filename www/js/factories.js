@@ -1,52 +1,65 @@
 angular.module('brawlr.factories', [])
 
 // This is a factory.  How do factory?
-.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebaseObject) {
+.factory('FacebookAuth', function($cordovaOauth, $firebaseAuth, $q, $firebaseObject, $rootScope) {
   var fbAuth = $firebaseAuth(fb);
-
-  _authData = null;
-  _profile = null;
 
   return {
     login: function() {
       return $q(function(resolve, reject) {
         $cordovaOauth.facebook('917369228283594', ['public_profile']).then(function(result) {
           fbAuth.$authWithOAuthToken('facebook', result.access_token).then(function(returnedAuthData) {
-            returnedAuthData.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id.replace('facebook:', '') + '/picture?width=600&height=600';
-            var userInDatabase = $firebaseObject(fb.child('Users').child('facebook:' + returnedAuthData.facebook.id));
+              console.log("Searching for user with FBID: " + returnedAuthData.uid);
+              userKeyRef = fb.child('UserKeys').child(returnedAuthData.uid);
+              userKeyRef.once('value', function(userKeySnapshot) {
+                userKey = userKeySnapshot.val();
+                // New user
+                if (userKey === null) {
 
-            userInDatabase.$loaded().then(function(userObject) {
+                  
+                  // Add two records into the Database
+                  // uniqueKey: FBID  |and|  FBID: uniqueKey
+                  // It's not beautiful, but it allows us to 1) Hide FBIDs, and 2) Do very fast lookups
 
-              // Ugly way to check if user is new or not
-              var isNewUser = true;
-              var numAttributes = 0;
-              angular.forEach(userObject, function(value, key) {
-                numAttributes += 1;
+                  // Writing stuff to Database
+                  // uniqueKey: FBID
+                  newUserRef = fb.child('Users').push({
+                    'facebookID': returnedAuthData.uid,
+                  });
+                  
+                  // get uniqueKey
+                  newUserKey = newUserRef.key();
+                  console.log("Creating new user with id: " + newUserKey);
+
+                  // FBID: uniqueKey
+                  fb.child('UserKeys').child(returnedAuthData.uid).set(newUserKey);
+
+                  // uniqueKey: {profile information}
+                  fb.child('Cards').child(newUserKey).set({
+                      'picture': 'http://graph.facebook.com/' + returnedAuthData.facebook.id.replace('facebook:', '') + '/picture?width=600&height=600',
+                      'username':  returnedAuthData.facebook.displayName,
+                      'zip': "",
+                      'height': "",
+                      'weight': "",
+                      'description': "",
+                  },
+                  function() {
+                    console.log('User created.  Resolving login()');
+                    $rootScope.userData = returnedAuthData;
+                    window.localStorage.userKey = newUserKey;
+                    returnedAuthData.isNewUser = true;
+                    resolve(returnedAuthData);
+                  });
+
+                 }
+                 else {
+                    returnedAuthData.isNewUser = false;
+                    window.localStorage.userKey = userKeySnapshot.val();
+                    $rootScope.userData = returnedAuthData;
+                    console.log("Logging in returning user: " + userKeySnapshot.val() + " and resolving login");
+                    resolve(returnedAuthData);
+                 }
               });
-              if (numAttributes > 2) {
-                isNewUser = false;
-              }
-
-              // New User.  Fill in everything
-              if (isNewUser) {
-                returnedAuthData.username = returnedAuthData.facebook.displayName;
-                fb.child('Users').child('facebook:' + returnedAuthData.facebook.id).set(returnedAuthData);
-                returnedAuthData.isNewUser = true;
-              }
-              // Existing User. Update shit
-              else {
-                userObject.picture = 'http://graph.facebook.com/' + returnedAuthData.facebook.id.replace('facebook:', '') + '/picture?width=600&height=600';
-                userObject.facebook = returnedAuthData.facebook;
-                userObject.expires = returnedAuthData.expires;
-                userObject.token = returnedAuthData.token;
-                userObject.$save();
-                returnedAuthData.isNewUser = false;
-              }
-              _profile = userObject;
-            });
-            _authData = fb.getAuth();
-            _authData.facebook.id = 'facebook:' + _authData.facebook.id;
-            resolve(returnedAuthData);
           }, function(error) {
               console.error('ERROR in $authWithOAuthToken: ' + error);
               resolve(null);
@@ -59,52 +72,16 @@ angular.module('brawlr.factories', [])
     },
     logout: function() {
       fbAuth.$unauth();
-      _authData = null;
-      _profile = null;
+      $rootScope.userData = null;
+      window.localStorage.userKey = null;
     },
-    // If the _authData already exists, just grab that.
-    //    Else, get auth data and add 'facebook:' to it if it's not already there.
-    getAuthData: function() {
-      if (_authData) {
-        return _authData;
-      }
-      // Buuut, if somethin weird happens and it's not:
-      else {
-        _authData = fb.getAuth();
-        if (_authData) {
-          if (_authData.facebook.id.indexOf('facebook:') == - 1) {
-            _authData.facebook.id = 'facebook:' + _authData.facebook.id;
-          }
-          return _authData;
-        }
-      }
-    },
-    getUserID: function() {
-      return _authData.facebook.id;
-    },
-    getProfile: function() {
-      return $q(function(resolve, reject) {
-        // If the profile is already loaded, send that. (Profile gets loaded in login function)
-        if (_profile) {
-          resolve(_profile);
-        }
-        if (_authData) {
-          userObj = $firebaseObject(fb.child('Users').child(_authData.facebook.id));
-          userObj.$loaded()
-            .then(function(loadedProfile) {
-              _profile = loadedProfile;
-              resolve(_profile);
-          });
-        }
-      });
-    }
   };
 })
 
 // This is a factory.  It doesn't do shit right now.
 .factory('ProfilePics', function($cordovaOauth, $firebaseAuth, $q, $firebaseObject, FacebookAuth) {
   user = FacebookAuth.getAuthData();
-  var profileRef = fb.child('Users').child(user.facebook.id);
+  var profileRef = fb.child('Cards').child(_authData.userKey);
   return {
     getPic: function() {
       return $q(function(resolve, reject) {

@@ -7,9 +7,10 @@ angular.module('brawlr.services', [])
 //    -getByIndex():  method to grab card by index
 //    -getByUserID():  method to grab card by user ID
 //    -reloadCards():  method to reload cards (by setting the _cards variable)
-.service('Card', function($q, $firebaseArray, $firebaseObject, FacebookAuth) {
-  var currentUserID = FacebookAuth.getUserID();
-  var _cards = $firebaseArray(fb.child('Users'));
+.service('Card', function($q, $rootScope, $firebaseArray, $firebaseObject, FacebookAuth) {
+
+  var userKey = window.localStorage.userKey;
+  var _cards = $firebaseArray(fb.child('Cards'));
 
   function shuffle(myArray) {
       var counter = myArray.length, temp, index;
@@ -27,7 +28,7 @@ angular.module('brawlr.services', [])
     result = [];
     for (var i = 0; i < myCardArray.length; i++) {
       // Make sure you're not getting yourself
-      if (myCardArray[i].$id != currentUserID) {
+      if (myCardArray[i].$id != userKey) {
         result.push(myCardArray[i]);
       }
     }
@@ -36,7 +37,8 @@ angular.module('brawlr.services', [])
 
   loadCards = function() {
     return $q(function(resolve, reject) {
-        _cards = $firebaseArray(fb.child('Users'));
+        console.log('Cards service loading');
+        _cards = $firebaseArray(fb.child('Cards'));
         _cards.$loaded().then(function(loadedCards){
           cardArrayNoUser = removeCurrentUser(loadedCards);
           _cards = shuffle(cardArrayNoUser);
@@ -68,15 +70,14 @@ angular.module('brawlr.services', [])
 })
 
 // This service handles Matches and messaging
-.service('Match', function($q, $firebaseObject, $firebaseArray, FacebookAuth) {
+.service('Match', function($q, $rootScope, $firebaseObject, $firebaseArray, FacebookAuth) {
   var swipes_ref = fb.child('Swipes');
-  var users_ref = fb.child('Users');
-  var matches_ref = fb.child('Matches');
-  var currentUserID = FacebookAuth.getUserID();
-
-  // We use _matches to get the $ids of other users
-  var _matches = $firebaseArray(matches_ref);
+  var cards_ref = fb.child('Cards');
+  var matchesRef = fb.child('Matches');
+  var userKey = window.localStorage.userKey;
+  var userMatchesRef = fb.child('Users').child(userKey).child('Matches');
   
+  var _matches = [];
   // Hold a list of firebaseObjects (One for each match in _matches)
   var _matchedUsers = [];
   
@@ -85,16 +86,22 @@ angular.module('brawlr.services', [])
 
   loadMatches = function() {
     return $q(function(resolve, reject) {
-      _matches = $firebaseArray(fb.child('Matches'));
-      _matches.$loaded().then(function(loadedMatches){
-        for (var i = 0; i < loadedMatches.length; i++){
-          otherGuysID = loadedMatches[i].$id.replace(FacebookAuth.getAuthData().facebook.id, '');
-          _matchedUsers.push($firebaseObject(users_ref.child(otherGuysID)));
-          _messageList.push($firebaseArray(matches_ref.child(loadedMatches[i].$id).child('Messages')));
-        }
-        console.log("Match service has loaded");
-        resolve();
-      });
+      _matches = [];
+      _matchedUsers = [];
+      _messageList = [];
+      console.log("Matches service loading.");
+        userMatchesRef.once('value', function(keyList) {
+          keyList.forEach(function(match) {
+            thisMatchKey = match.key();
+            otherGuysID = thisMatchKey.replace(userKey, '');
+            _matchedUsers.push($firebaseObject(cards_ref.child(otherGuysID)));
+            _messageList.push($firebaseArray(matchesRef.child(thisMatchKey).child('Messages')));
+            _matches.push($firebaseObject(matchesRef.child(thisMatchKey)));
+            console.log("Found match with key:" + thisMatchKey);
+          });
+          console.log("Matches service has loaded.");
+          resolve();  
+        });
     });
   };
 
@@ -117,7 +124,7 @@ angular.module('brawlr.services', [])
     },
     isMatch: function(swipedUser) {
       return $q(function(resolve, reject) {
-        var rightOnCurrent =  $firebaseObject(swipes_ref.child(swipedUser).child(currentUserID).child('swipedRight'));
+        var rightOnCurrent =  $firebaseObject(swipes_ref.child(swipedUser).child(window.localStorage.userKey).child('swipedRight'));
   
         rightOnCurrent.$loaded().then(function(current) {
           if (current.$value == 'True') {
