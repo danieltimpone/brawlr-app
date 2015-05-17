@@ -4,17 +4,20 @@
       <img src="img/gloveIcon2.png"  height="32" width="32">
     </button>
   </ion-nav-buttons>
+  <ion-nav-buttons side="right">
+     <button class="button icon button-icon ion-navicon" ng-click="openPopover($event);$event.stopPropagation()"></button> 
+  </ion-nav-buttons>
   <ion-content on-swipe-right="swipeRight()">
     <!-- <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher> -->
     <ion-list class="list card">
       <ion-item ng-repeat="m in messageArray" class='match-list-item shit'>
           <a class="item item-avatar item-text-wrap" href="#">
-            <img ng-if="m.userID == otherGuy.$id" ng-src="{{otherGuy.picture}}" class='avatar-frame'>
-            <img ng-if="m.userID == 'BRAWLRADMIN'" ng-src="img/fist.png" class='avatar-frame'>
-            <img ng-if="m.userID == userProfile.$id" ng-src="{{userProfile.picture}}" class='avatar-frame'>
-            <h2 ng-if="m.userID == otherGuy.$id">{{ otherGuy.username }}</h2>
-            <h2 ng-if="m.userID == userProfile.$id">{{ userProfile.username }}</h2>
-            <h2 ng-if="m.userID == 'BRAWLRADMIN'">BRAWLR INSTIGATOR</h2>
+            <img ng-if="m.userKey == otherGuy.$id" ng-src="{{otherGuy.picture}}" class='avatar-frame'>
+            <img ng-if="m.userKey == 'BRAWLRADMIN'" ng-src="img/fist.png" class='avatar-frame'>
+            <img ng-if="m.userKey == userProfile.$id" ng-src="{{userProfile.picture}}" class='avatar-frame'>
+            <h2 ng-if="m.userKey == otherGuy.$id">{{ otherGuy.username }} \</h2>
+            <h2 ng-if="m.userKey == userProfile.$id">{{ userProfile.username }}</h2>
+            <h2 ng-if="m.userKey == 'BRAWLRADMIN'">BRAWLR INSTIGATOR</h2>
             <p>{{m.text}}</p>
           </a>
       </ion-item>
@@ -24,5 +27,19 @@
       <textarea placeholder="Talk some shit" id="messageBox" rows="2" class="form-control" ng-model="newMessageText"></textarea>
       <button type="submit" class="button button-full button-positive" ng-click="sendMessage(newMessageText); newMessageText=null;" id='sendMessageButton'>Send</button>
     </ion-scroll>
-  </ion-content>
+
+<!--     This is here cuz popovers don't work on the emulator for some reason      
+    <div class="item item-button-right">
+      Report User
+      <button class="button button-assertive" ng-click="reportUser();">
+        <i class="icon ion-flag"></i>
+      </button>
+    </div>
+    <div class="item item-button-right">
+      Destroy Match
+      <button class="button button-dark" ng-click="destroyMatch();">
+        <i class="icon ion-close"></i>
+      </button>
+    </div>
+ -->  </ion-content>
 </ion-view>

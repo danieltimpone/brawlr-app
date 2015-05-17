@@ -47,6 +47,7 @@ angular.module('brawlr.factories', [])
                     console.log('User created.  Resolving login()');
                     $rootScope.userData = returnedAuthData;
                     window.localStorage.userKey = newUserKey;
+                    $rootScope.userKey = newUserKey;
                     returnedAuthData.isNewUser = true;
                     resolve(returnedAuthData);
                   });
@@ -56,6 +57,7 @@ angular.module('brawlr.factories', [])
                     returnedAuthData.isNewUser = false;
                     window.localStorage.userKey = userKeySnapshot.val();
                     $rootScope.userData = returnedAuthData;
+                    $rootScope.userKey = userKeySnapshot.val();
                     console.log("Logging in returning user: " + userKeySnapshot.val() + " and resolving login");
                     resolve(returnedAuthData);
                  }

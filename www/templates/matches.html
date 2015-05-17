@@ -1,6 +1,6 @@
 <ion-view title="BRAWLR">
   <ion-nav-buttons side="left">
-    <button class="button icon ion-ios-people-outline" ui-sref="cards"></button>
+    <button class="button icon ion-ios-people" ui-sref="cards"></button>
   </ion-nav-buttons>
   <ion-content on-swipe-right="swipeRight()">
     <ion-refresher pulling-text="Update Matches" on-refresh="doRefresh()" > </ion-refresher>
@@ -12,6 +12,7 @@
             <p>{{messageList[$index][messageList[$index].length-1].$value}}</p>
           </a>
       </ion-item>
+      <ion-item ng-show="!matches.length">You don't have any matches yet!</ion-item>
     </ion-list>
   </ion-content>
 </ion-view>

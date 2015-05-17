@@ -17,7 +17,7 @@ angular.module('brawlr', [
 ])
 
 // do all the things ionic needs to get going
-.run(function($ionicPlatform, $rootScope, $state, $ionicPopup) {
+.run(function($ionicPlatform, $rootScope, $state, $ionicPopup, $firebaseAuth) {
   
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
@@ -53,15 +53,19 @@ angular.module('brawlr', [
         );
     }
   });
+
   $rootScope.userData = fb.getAuth();
-  $rootScope.userID = window.localStorage.userKey;
+  $rootScope.userKey = window.localStorage.userKey;
+  if (!($rootScope.userKey && $rootScope.userData)) {
+    $state.go('login', {}, {reload: true});
+  }
 
   // Log stateChangeErrors to console. I don't know if this works.
   $rootScope.$on("$stateChangeError", console.log.bind(console));
 
   // Prevent unAuthed users from viewing auth-required states
   $rootScope.$on('$stateChangeStart', function(event, toState) {
-    if (toState.data.authRequired && !fb.getAuth()) {
+    if (toState.data.authRequired && !($rootScope.userKey && $rootScope.userData)) {
         console.log("Unauthed user tried to go somewhere bad");
         event.preventDefault();
         $state.go('login', {}, {reload: true});
@@ -113,7 +117,7 @@ angular.module('brawlr', [
   });
 
   $stateProvider.state('matches', {
-    url: '/matches',
+    url: '/matches/:forceReload',
     templateUrl: 'templates/matches.html',
     controller: 'MatchesCtrl',
     resolve:{

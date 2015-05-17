@@ -5,7 +5,7 @@ angular.module('brawlr.services', [])
 //    -promise: used by $stateProvider (in app.js) to know when cards are done loading
 //    -getCards():  method to grab latest cards
 //    -getByIndex():  method to grab card by index
-//    -getByUserID():  method to grab card by user ID
+//    -getByuserKey():  method to grab card by user ID
 //    -reloadCards():  method to reload cards (by setting the _cards variable)
 .service('Card', function($q, $rootScope, $firebaseArray, $firebaseObject, FacebookAuth) {
 
@@ -56,9 +56,9 @@ angular.module('brawlr.services', [])
     getByIndex: function(cardIndex) {
       return _cards[cardIndex];
     },
-    getByUserID: function(userId) {
+    getByuserKey: function(userKey) {
       for (var i = 0; i < _cards.length; i++) {
-        if (_cards[i].$id == userId) {
+        if (_cards[i].$id == userKey) {
           _cards[i].ready = true;
           return _cards[i];
         }
@@ -93,11 +93,13 @@ angular.module('brawlr.services', [])
         userMatchesRef.once('value', function(keyList) {
           keyList.forEach(function(match) {
             thisMatchKey = match.key();
-            otherGuysID = thisMatchKey.replace(userKey, '');
-            _matchedUsers.push($firebaseObject(cards_ref.child(otherGuysID)));
-            _messageList.push($firebaseArray(matchesRef.child(thisMatchKey).child('Messages')));
-            _matches.push($firebaseObject(matchesRef.child(thisMatchKey)));
-            console.log("Found match with key:" + thisMatchKey);
+            if (match.val() == 'True') {
+              otherGuysID = thisMatchKey.replace(userKey, '');
+              _matchedUsers.push($firebaseObject(cards_ref.child(otherGuysID)));
+              _messageList.push($firebaseArray(matchesRef.child(thisMatchKey).child('Messages')));
+              _matches.push($firebaseObject(matchesRef.child(thisMatchKey)));
+              console.log("Found match with key:" + thisMatchKey);
+            }
           });
           console.log("Matches service has loaded.");
           resolve();  
@@ -121,6 +123,9 @@ angular.module('brawlr.services', [])
     },
     getMessageByIndex: function(messageIndex) {
         return _messageList[messageIndex];
+    },
+    getMatchIDbyIndex: function(matchIndex) {
+        return _matches[matchIndex].$id;
     },
     isMatch: function(swipedUser) {
       return $q(function(resolve, reject) {

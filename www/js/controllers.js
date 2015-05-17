@@ -3,10 +3,15 @@ angular.module('brawlr.controllers', [])
  // AppCtrl is the parent to all other Controllers (see: index.html)
  // We use app control to set the root variables for the user's id/profile
 .controller('AppCtrl', function($scope, $rootScope, $state, $firebaseObject, FacebookAuth) {
-  loadingProfile = $firebaseObject(fb.child('Cards').child(window.localStorage.userKey));
-  loadingProfile.$bindTo($scope, "userProfile").then(function() {
-    console.log("AppCtrl has binded userProfile to $scope.userProfile"); // { foo: "bar" }
-  });
+  if ($rootScope.userKey && $rootScope.userData) {
+    loadingProfile = $firebaseObject(fb.child('Cards').child(window.localStorage.userKey));
+    loadingProfile.$bindTo($rootScope, "userProfile").then(function() {
+      console.log("AppCtrl has binded userProfile to $scope.userProfile"); // { foo: "bar" }
+    });    
+  }
+  else {
+    $state.go('login', {}, {reload: true});    
+  }
 
   $scope.headerClicked = function () {
     $state.go('cards', {}, {});
@@ -29,19 +34,25 @@ angular.module('brawlr.controllers', [])
     authPromise.then(function(authData) {
       console.log('login returned:');
       console.log(JSON.stringify(authData));
-      if (authData) {
-        if (authData.isNewUser) { 
-          console.log("User logged in.  Going to: profile");
-          $state.go('profile', {}, {reload: true});
+      loadingProfile = $firebaseObject(fb.child('Cards').child(window.localStorage.userKey));
+      loadingProfile.$bindTo($rootScope, "userProfile").then(function() {
+        console.log("Login has binded userProfile to $scope.userProfile"); // { foo: "bar" }
+        if (authData) {
+          if (authData.isNewUser) { 
+            console.log("User logged in.  Going to: profile");
+            $state.go('profile', {}, {reload: true});
+          }
+          else {
+            console.log("User logged in.  Going to: cards");
+            $state.go('cards', {}, {reload: true});
+          }
         }
         else {
-          console.log("User logged in.  Going to: cards");
-          $state.go('cards', {}, {reload: true});
+          console.log('Authentication Failed');
         }
-      }
-      else {
-        console.log('Authentication Failed');
-      }
+
+      });    
+
     });
   };
 
@@ -122,7 +133,7 @@ angular.module('brawlr.controllers', [])
           matchId = $scope.swipedUser + userKey;
         }
         
-        // Chceck if this match has somehow been made before
+        // Make sure this fucker is new
         matchesRef.child(matchId).once('value', function(snapshot) {
           var exists = (snapshot.val() !== null);
           if(!exists) {
@@ -132,11 +143,14 @@ angular.module('brawlr.controllers', [])
                 'Messages': [{
                   'timestampForIndex':  Firebase.ServerValue.TIMESTAMP,
                   'text': 'He called you a bitch',
-                  'userID': 'BRAWLRADMIN'
+                  'userKey': 'BRAWLRADMIN'
                 }]
               };
+              // Set intro message in brand-new match object
               matchesRef.child(matchId).set(newMatchObj);
+              // (Users/$UID/Matches/$MatchID)
               usersMatchesRef.child(matchId).set('True');
+              // (Users/$UID/Matches/$MatchID)
               otherGuyMatchesRef = fb.child('Users').child($scope.swipedUser).child('Matches');
               otherGuyMatchesRef.child(matchId).set('True');
           }
@@ -181,7 +195,7 @@ angular.module('brawlr.controllers', [])
 })
 
 .controller('CardCtrl', function($scope, $stateParams, $state, $ionicHistory, Card) {
-  
+
   $scope.detailedCard = Card.getByIndex($stateParams.cardIndex);
 
   $scope.myGoBack = function() {
@@ -195,7 +209,14 @@ angular.module('brawlr.controllers', [])
 })
 
 // This covers the main match view
-.controller('MatchesCtrl', function($scope, $rootScope, $firebaseObject, $state, $ionicHistory, Match) {
+.controller('MatchesCtrl', function($scope, $rootScope, $stateParams, $firebaseObject, $state, $ionicHistory, Match) {
+  $scope.$on('$stateChangeSuccess', 
+    function(event, toState, toParams, fromState, fromParams){
+    if (toState.name == 'matches' && toParams.forceReload) {
+      console.log("MatchesCtrl saw forceReload");
+      $scope.doRefresh();
+    }
+  });
   $scope.user = $rootScope.userData;
   $scope.matches = Match.getMatches();
   $scope.matchedUsers = Match.getMatchedUsers();
@@ -236,8 +257,13 @@ angular.module('brawlr.controllers', [])
 })
 
 // This covers a single match view (i.e. messaging)
-.controller('MatchCtrl', function($scope, $stateParams, $state, $ionicHistory, $ionicScrollDelegate, FacebookAuth, Match) {
+.controller('MatchCtrl', function($scope, $rootScope, $stateParams, $state, $ionicHistory, $ionicScrollDelegate, $ionicPopover, $ionicPopup, FacebookAuth, Match) {
 
+  setTimeout(function(){ $ionicScrollDelegate.scrollBottom(true); }, 500);
+  matchId = Match.getMatchIDbyIndex($stateParams.matchIndex);
+  console.log($stateParams.matchIndex);
+  console.log("Grabbed id:");
+  console.log(matchId);
   $scope.messageArray = Match.getMessageByIndex($stateParams.matchIndex);
   $scope.otherGuy = Match.getUserByMatchIndex($stateParams.matchIndex);
 
@@ -245,32 +271,69 @@ angular.module('brawlr.controllers', [])
   $scope.messageArray.$watch(function() {
       $ionicScrollDelegate.$getByHandle('small').scrollTop();
   });
+  var matchesRef = fb.child('Matches');
+  var usersMatchesRef = fb.child('Users').child($rootScope.userKey).child('Matches');
   
-  setTimeout(function(){ $ionicScrollDelegate.scrollBottom(true); }, 500);
-  $scope.myGoBack = function() {
-      // Disable sluggish animation
-      $ionicHistory.nextViewOptions({
-          disableAnimate: true,
-      });
-      $ionicHistory.goBack();
+  $scope.reportUser = function() {
+    var confirmReportPopup = $ionicPopup.confirm({
+      title: "Report User",
+      template: 'Are you sure you want to report this user?'
+    });
+    confirmReportPopup.then(function(res) {
+      if(res) {
+        // Set Match as flagged in your own User Row.   (Users/$UID/Matches/$MatchID)
+        fb.child('Users').child($rootScope.userKey).child('Matches').child(matchId).set('Flagged');
+        // Set Match as false in their User Row.        (Users/$UID/Matches/$MatchID)
+        fb.child('Users').child($scope.otherGuy.$id).child('Matches').child(matchId).set('False');
+
+        matchesLoading = Match.reloadMatches();
+        matchesLoading.then(function(){
+          var reportedAlertPopup = $ionicPopup.alert({
+            title: "User Reported",
+            template: "We are very sorry they were a jerk!  We will investigate into the matter"
+          });
+          reportedAlertPopup.then(function() {
+            $state.go('matches', {forceReload: "True"}, {reload: true});
+          });
+        });
+      } else {
+       console.log('ReportUser cancelled');
+      }
+    });
   };
 
-  $scope.swipeRight = function() {
-      $ionicHistory.goBack();
+  $scope.destroyMatch = function() {
+    var confirmReportPopup = $ionicPopup.confirm({
+      title: "Destroy Match",
+      template: 'Are you sure you want to destroy this match? You may never be able to match with this user again!'
+    });
+    confirmReportPopup.then(function(res) {
+      if(res) {
+        // Set Match as false in your own User Row.   (Users/$UID/Matches/$MatchID)
+        fb.child('Users').child($rootScope.userKey).child('Matches').child(matchId).set('False');
+        // Set Match as false in their User Row.        (Users/$UID/Matches/$MatchID)
+        fb.child('Users').child($scope.otherGuy.$id).child('Matches').child(matchId).set('False');
+
+        matchesLoading = Match.reloadMatches();
+        matchesLoading.then(function(){
+          $state.go('matches', {forceReload: "True"}, {reload: true});
+        });
+      }
+   });
   };
 
   $scope.sendMessage = function(newMessageText) {
     if (newMessageText === '' || newMessageText === null || newMessageText === undefined) {
       return null;
     }
-    var userID = window.localStorage.userKey;
+    var userKey = window.localStorage.userKey;
 
     var d = new Date();
     newMessageTextObject = {
       'time': d,
       'timestampForIndex':  Firebase.ServerValue.TIMESTAMP,
       'text': newMessageText,
-      'userID': userID
+      'userKey': userKey
     };
     $scope.newMessageText = null;
     $scope.messageArray.$add(newMessageTextObject).then(function(ref) {
@@ -280,6 +343,53 @@ angular.module('brawlr.controllers', [])
         // clear message text
       }); 
   };
+
+  // Load popover front template, then initialize its shit.
+  $ionicPopover.fromTemplateUrl('templates/matches.popover.html', {
+    scope: $scope
+  }).then(function(popover) {
+    console.log("poopover loaded");
+    $scope.popover = popover;
+    $scope.openPopover = function($event) {
+        console.log("Opening popover");
+        $scope.popover.show($event);
+        console.log("Opened popover");
+      };
+      $scope.closePopover = function() {
+        $scope.popover.hide();
+      };
+      //Cleanup the popover when we're done with it!
+      $scope.$on('$destroy', function() {
+        $scope.popover.remove();
+      });
+      // Execute action on hide popover
+      $scope.$on('popover.hidden', function() {
+        // Execute action
+      });
+      // Execute action on remove popover
+      $scope.$on('popover.removed', function() {
+        // Execute action
+      });
+      
+      $scope.myGoBack = function() {
+          // Disable sluggish animation
+          $ionicHistory.nextViewOptions({
+              disableAnimate: true,
+          });
+          $ionicHistory.goBack();
+      };
+
+      $scope.swipeRight = function() {
+          $ionicHistory.goBack();
+      };
+  }).catch(function(err) {
+    console.log("Err is:");
+    console.log(JSON.stringify(err));
+
+
+  
+  });
+
 
 })
 
@@ -294,5 +404,7 @@ angular.module('brawlr.controllers', [])
       });
       $ionicHistory.goBack();
   };
+
+
 
 });

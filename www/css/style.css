@@ -5,10 +5,23 @@
 */
 
 /* Nav-bar styling */
-.brawlr-nav-bar, .ion-person, .ion-ios-people-outline {
+.brawlr-nav-bar, .ion-person, .ion-ios-people {
     background-color: #E61C17;
-    color: #FFFFFF;
+    /*color: #FFFFFF;*/
     border-color: #E61C17;
+    background: #a90329; /* Old browsers */
+background: #ff0000; /* Old browsers */
+background: -moz-linear-gradient(top,  #ff0000 2%, #f20c0c 99%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(2%,#ff0000), color-stop(99%,#f20c0c)); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  #ff0000 2%,#f20c0c 99%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  #ff0000 2%,#f20c0c 99%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  #ff0000 2%,#f20c0c 99%); /* IE10+ */
+background: linear-gradient(to bottom,  #ff0000 2%,#f20c0c 99%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ff0000', endColorstr='#f20c0c',GradientType=0 ); /* IE6-9 */
+
+}
+.brawlr-nav-bar {
+    color: #FFFFFF;
 }
 
 /* Profile page styling */
