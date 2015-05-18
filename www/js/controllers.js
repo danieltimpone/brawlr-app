@@ -65,12 +65,12 @@ angular.module('brawlr.controllers', [])
       $scope.showRightArrow = true;
       $ionicScrollDelegate.getScrollView().options.scrollingY = false;
     }
-    if (_index == 1) {
+    if (_index == 1 || _index == 3) {
       $scope.showLeftArrow = true;
       $scope.showRightArrow = true;
       $ionicScrollDelegate.getScrollView().options.scrollingY = false;
     }
-    if (_index == 2) {
+    if (_index == 4) {
       $scope.showLeftArrow = true;
       $scope.showRightArrow = false;
       $ionicScrollDelegate.getScrollView().options.scrollingY = true;

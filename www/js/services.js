@@ -38,7 +38,7 @@ angular.module('brawlr.services', [])
   loadCards = function() {
     return $q(function(resolve, reject) {
         console.log('Cards service loading');
-        _cards = $firebaseArray(fb.child('Cards'));
+        _cards = $firebaseArray(fb.child('Cards').limitToLast(20));
         _cards.$loaded().then(function(loadedCards){
           cardArrayNoUser = removeCurrentUser(loadedCards);
           _cards = shuffle(cardArrayNoUser);
