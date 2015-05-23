@@ -3,7 +3,7 @@ angular.module('brawlr.controllers', [])
  // AppCtrl is the parent to all other Controllers (see: index.html)
  // We use app control to set the root variables for the user's id/profile
 .controller('AppCtrl', function($scope, $rootScope, $state, $firebaseObject, FacebookAuth) {
-  if ($rootScope.userKey && $rootScope.userData) {
+  if ($rootScope.userKey && $rootScope.userData && fb.getAuth()) {
     loadingProfile = $firebaseObject(fb.child('Cards').child(window.localStorage.userKey));
     loadingProfile.$bindTo($rootScope, "userProfile").then(function() {
       console.log("AppCtrl has binded userProfile to $scope.userProfile"); // { foo: "bar" }
